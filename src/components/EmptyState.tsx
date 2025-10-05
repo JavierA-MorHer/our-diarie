@@ -1,5 +1,4 @@
 import handsCoffeeImage from '../assets/Hands - Coffee.png';
-import { WashiTape } from './WashiTape';
 
 const romanticPhrases = [
   "Cada momento juntos merece ser recordado para siempre",
