@@ -26,8 +26,6 @@ export function EmptyState() {
             className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 object-contain opacity-90 drop-shadow-lg mx-auto"
           />
           {/* Cintas washi decorativas */}
-          <WashiTape variant="dots" color="#D97746" rotation={-15} position="top-left" />
-          <WashiTape variant="stripes" color="#9A9B73" rotation={12} position="top-right" />
         </div>
 
         {/* Título manuscrito */}
