@@ -1,5 +1,4 @@
 import handsBookImage from '../assets/Hands - Book.png';
-import { WashiTape } from './WashiTape';
 
 interface WelcomeScreenProps {
   onStart: () => void;
