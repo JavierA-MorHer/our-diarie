@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Inter:wght@400;500;600&family=Dancing+Script:wght@400;500;600&display=swap');
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @custom-variant dark (&:is(.dark *));
 
@@ -124,7 +126,8 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+    outline-color: rgb(from var(--color-ring) r g b / 0.5);
   }
 
   body {

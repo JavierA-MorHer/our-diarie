@@ -1,13 +1,19 @@
-import { Plus, Calendar, Heart } from 'react-feather';
+import { Plus, Calendar, Heart, LogOut, Users, ArrowLeft, Share2 } from 'react-feather';
 import type { DiaryEntryData } from './DiaryEntry';
+import { AuthService } from '../firebase';
 
 interface EntryListProps {
   entries: DiaryEntryData[];
   selectedEntry: string | null;
   onSelectEntry: (id: string) => void;
   onNewEntry: () => void;
+  onSignOut: () => void;
   isExpanded: boolean;
   onToggleSidebar: () => void;
+  currentDiaryType?: 'personal' | 'shared';
+  currentSharedDiary?: { id: string; title: string } | null;
+  onShowSharedDiaries?: () => void;
+  onBackToPersonalDiary?: () => void;
 }
 
 // Rotaciones aleatorias para cada entrada (se mantienen consistentes)
@@ -16,20 +22,81 @@ const getRotation = (index: number) => {
   return rotations[index % rotations.length];
 };
 
-export function EntryList({ entries, selectedEntry, onSelectEntry, onNewEntry, isExpanded, onToggleSidebar }: EntryListProps) {
+export function EntryList({ 
+  entries, 
+  selectedEntry, 
+  onSelectEntry, 
+  onNewEntry, 
+  onSignOut, 
+  isExpanded, 
+  onToggleSidebar,
+  currentDiaryType = 'personal',
+  currentSharedDiary,
+  onShowSharedDiaries,
+  onBackToPersonalDiary
+}: EntryListProps) {
+  const user = AuthService.getCurrentUser();
+  const userName = user?.displayName || user?.email?.split('@')[0] || 'Usuario';
   return (
     <div className="w-full h-full bg-[#FAF8F1] flex flex-col relative shadow-[4px_0_12px_rgba(0,0,0,0.06)]">
       {/* Header */}
       <div className="p-3 md:p-6 border-b border-[#B9AE9D]/30">
-        <div className="flex items-center gap-2 mb-2 md:mb-4">
-          <button
-            onClick={onToggleSidebar}
-            className="text-[#D97746] hover:text-[#D97746]/80 transition-colors"
-            aria-label={isExpanded ? 'Colapsar sidebar' : 'Expandir sidebar'}
-          >
-            <Heart className="w-5 h-5" />
-          </button>
-          {isExpanded && <h2 className="family-lora text-sm md:text-base text-[#4E443A]">El Diario de Lo Nuestro</h2>}
+        <div className="flex items-center justify-between mb-2 md:mb-4">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onToggleSidebar}
+              className="text-[#D97746] hover:text-[#D97746]/80 transition-colors"
+              aria-label={isExpanded ? 'Colapsar sidebar' : 'Expandir sidebar'}
+            >
+              <Heart className="w-5 h-5" />
+            </button>
+            {isExpanded && (
+              <div className="flex items-center gap-2">
+                {currentDiaryType === 'shared' && onBackToPersonalDiary && (
+                  <button
+                    onClick={onBackToPersonalDiary}
+                    className="text-[#9A9B73] hover:text-[#D97746] transition-colors"
+                    title="Volver a mi diario personal"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                )}
+                <h2 className="family-lora text-sm md:text-base text-[#4E443A]">
+                  {currentDiaryType === 'shared' && currentSharedDiary 
+                    ? currentSharedDiary.title 
+                    : 'El Diario de Lo Nuestro'
+                  }
+                </h2>
+                {currentDiaryType === 'shared' && (
+                  <Users className="w-4 h-4 text-[#D97746]" title="Diario compartido" />
+                )}
+              </div>
+            )}
+          </div>
+          
+          {isExpanded && (
+            <div className="flex items-center gap-3">
+              {currentDiaryType === 'personal' && onShowSharedDiaries && (
+                <button
+                  onClick={onShowSharedDiaries}
+                  className="text-[#9A9B73] hover:text-[#D97746] transition-colors"
+                  title="Ver diarios compartidos"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+              )}
+              <span className="text-xs text-[#9A9B73] family-inter">
+                ({userName})
+              </span>
+              <button
+                onClick={onSignOut}
+                className="text-[#9A9B73] hover:text-[#D97746] transition-colors"
+                title="Cerrar sesión"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
 
         {isExpanded && (

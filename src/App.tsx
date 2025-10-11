@@ -1,11 +1,54 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { EntryList } from './components/EntryList';
 import { DiaryEntry, type DiaryEntryData } from './components/DiaryEntry';
+import { EntryForm } from './components/EntryForm';
 import { EmptyState } from './components/EmptyState';
 import { CassettePlayer } from './components/CassettePlayer';
 import { WelcomeScreen } from './components/WelcomeScreen';
+import { SharedDiaryList } from './components/SharedDiaryList';
+import { DeleteConfirmationModal } from './components/DeleteConfirmationModal';
+import { AuthService, FirestoreService, CollaborationService, type DiaryEntry as FirebaseDiaryEntry, type SharedDiary } from './firebase';
+import { where } from 'firebase/firestore';
 
-// Mock data for demonstration
+// Function to transform Firebase data to component format
+const transformFirebaseEntry = (firebaseEntry: FirebaseDiaryEntry): DiaryEntryData => {
+  // Handle date conversion
+  let dateString = '';
+  if (firebaseEntry.date) {
+    if (firebaseEntry.date instanceof Date) {
+      dateString = firebaseEntry.date.toLocaleDateString('es-ES', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    } else {
+      // Handle Firestore Timestamp
+      dateString = firebaseEntry.date.toDate().toLocaleDateString('es-ES', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+  }
+
+  return {
+    id: firebaseEntry.id || '',
+    title: firebaseEntry.title,
+    date: dateString,
+    content: firebaseEntry.content,
+    photos: (firebaseEntry.photos || []).map((url, index) => ({
+      id: `p${index + 1}`,
+      url: url,
+      alt: `Foto ${index + 1}`
+    })),
+    song: firebaseEntry.mood ? {
+      title: firebaseEntry.mood,
+      artist: 'Nuestro Diario'
+    } : undefined
+  };
+};
+
+// Mock data for demonstration (fallback)
 const mockEntries: DiaryEntryData[] = [
   {
     id: '1',
@@ -67,13 +110,112 @@ Esta carta nunca la envié porque estaba esperándote a ti para escribirla en pe
 ];
 
 export default function App() {
-  const [entries] = useState<DiaryEntryData[]>(mockEntries);
+  const [entries, setEntries] = useState<DiaryEntryData[]>([]);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingEntries, setIsLoadingEntries] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<DiaryEntryData | null>(null);
+  
+  // Shared diary states
+  const [currentDiaryType, setCurrentDiaryType] = useState<'personal' | 'shared'>('personal');
+  const [currentSharedDiary, setCurrentSharedDiary] = useState<SharedDiary | null>(null);
+  const [showSharedDiaries, setShowSharedDiaries] = useState(false);
+  
+  // Delete states
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<{ id: string; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const selectedEntry = entries.find(entry => entry.id === selectedEntryId);
+
+  const handleInvitationAcceptance = async (invitationCode: string) => {
+    try {
+      const currentUser = AuthService.getCurrentUser();
+      if (!currentUser) {
+        // User not authenticated, redirect to welcome screen
+        return;
+      }
+
+      await CollaborationService.acceptInvitation(invitationCode, currentUser.uid);
+      
+      // Get the shared diary
+      const sharedDiary = await CollaborationService.getSharedDiary(invitationCode);
+      if (sharedDiary) {
+        // Switch to shared diary
+        await handleSelectSharedDiary(sharedDiary.id!);
+      }
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
+      alert('Error al aceptar la invitación. Por favor, inténtalo de nuevo.');
+    }
+  };
+
+  // Check for invitation code in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const invitationCode = urlParams.get('invite');
+    
+    if (invitationCode) {
+      // Handle invitation acceptance
+      handleInvitationAcceptance(invitationCode);
+    }
+  }, []);
+
+  // Load entries from Firebase when user is authenticated
+  const loadEntries = async (userId: string, diaryId?: string) => {
+    setIsLoadingEntries(true);
+    try {
+      let firebaseEntries: FirebaseDiaryEntry[];
+      
+      if (diaryId && currentDiaryType === 'shared') {
+        // Load shared diary entries
+        firebaseEntries = await FirestoreService.getAll<FirebaseDiaryEntry>('diaryEntries', [
+          where('diaryId', '==', diaryId)
+        ]);
+      } else {
+        // Load personal diary entries
+        firebaseEntries = await FirestoreService.getDiaryEntries(userId);
+      }
+      
+      const transformedEntries = firebaseEntries.map(transformFirebaseEntry);
+      setEntries(transformedEntries);
+    } catch (error) {
+      console.error('Error loading entries:', error);
+      // Show empty state instead of mock data
+      setEntries([]);
+      alert('Error al cargar las entradas. Por favor, verifica tu conexión e intenta de nuevo.');
+    } finally {
+      setIsLoadingEntries(false);
+    }
+  };
+
+  // Check authentication status on app load
+  useEffect(() => {
+    const unsubscribe = AuthService.onAuthStateChange(async (user) => {
+      const isUserAuthenticated = !!user;
+      setIsAuthenticated(isUserAuthenticated);
+      
+      if (isUserAuthenticated) {
+        // User is authenticated, load entries and then stop loading
+        await loadEntries(user.uid);
+        setIsLoading(false);
+        // Don't show welcome screen if user is already authenticated
+        setShowWelcome(false);
+      } else {
+        // User is not authenticated
+        setEntries([]);
+        setIsLoading(false);
+        setShowWelcome(true);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleSelectEntry = (id: string) => {
     // Si se hace clic en la entrada ya seleccionada, deseleccionarla
@@ -81,19 +223,232 @@ export default function App() {
   };
 
   const handleNewEntry = () => {
-    // Placeholder for new entry functionality
-    console.log('Crear nueva entrada');
+    setEditingEntry(null);
+    setIsEditing(true);
+    setSelectedEntryId(null);
+  };
+
+  const handleSaveEntry = async (entryData: Omit<DiaryEntryData, 'id'>) => {
+    try {
+      const currentUser = AuthService.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      // Check if user can edit current diary
+      if (currentDiaryType === 'shared' && currentSharedDiary) {
+        const canEdit = await CollaborationService.canUserEditDiary(currentSharedDiary.id!, currentUser.uid);
+        if (!canEdit) {
+          throw new Error('No tienes permisos para editar este diario');
+        }
+      }
+
+      // Transform to Firebase format
+      const firebaseEntry = {
+        title: entryData.title,
+        content: entryData.content,
+        date: new Date(entryData.date),
+        photos: entryData.photos?.map(photo => photo.url) || [],
+        mood: entryData.song?.title || null,
+        tags: [],
+        userId: currentUser.uid,
+        diaryId: currentDiaryType === 'shared' ? currentSharedDiary?.id : undefined,
+        createdBy: currentUser.uid,
+        lastModifiedBy: currentUser.uid
+      };
+
+      // Save to Firebase
+      const entryId = await FirestoreService.createDiaryEntry(firebaseEntry);
+      
+      // Transform back to component format
+      const newEntry: DiaryEntryData = {
+        id: entryId,
+        ...entryData
+      };
+
+      // Update local state
+      setEntries(prev => [newEntry, ...prev]);
+      setSelectedEntryId(entryId);
+      setIsEditing(false);
+      setEditingEntry(null);
+    } catch (error) {
+      console.error('Error saving entry:', error);
+      throw error;
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditingEntry(null);
+  };
+
+  // Shared diary navigation
+  const handleSelectSharedDiary = async (diaryId: string) => {
+    try {
+      const currentUser = AuthService.getCurrentUser();
+      if (!currentUser) return;
+
+      // Get shared diary details
+      const sharedDiary = await FirestoreService.getById<SharedDiary>('sharedDiaries', diaryId);
+      if (!sharedDiary) return;
+
+      setCurrentSharedDiary(sharedDiary);
+      setCurrentDiaryType('shared');
+      setShowSharedDiaries(false);
+      setSelectedEntryId(null);
+      setIsEditing(false);
+      
+      // Load entries for this shared diary
+      await loadEntries(currentUser.uid, diaryId);
+    } catch (error) {
+      console.error('Error selecting shared diary:', error);
+    }
+  };
+
+  const handleBackToPersonalDiary = async () => {
+    try {
+      const currentUser = AuthService.getCurrentUser();
+      if (!currentUser) return;
+
+      setCurrentDiaryType('personal');
+      setCurrentSharedDiary(null);
+      setSelectedEntryId(null);
+      setIsEditing(false);
+      
+      // Load personal entries
+      await loadEntries(currentUser.uid);
+    } catch (error) {
+      console.error('Error switching to personal diary:', error);
+    }
+  };
+
+  const handleShowSharedDiaries = () => {
+    setShowSharedDiaries(true);
+  };
+
+  // Delete functions
+  const handleDeleteEntry = (entryId: string) => {
+    const entry = entries.find(e => e.id === entryId);
+    if (entry) {
+      setDeleteItem({
+        id: entryId,
+        name: entry.title
+      });
+      setShowDeleteModal(true);
+    }
+  };
+
+
+  const confirmDelete = async () => {
+    if (!deleteItem) return;
+
+    setIsDeleting(true);
+    try {
+      // Delete entry
+      if (currentDiaryType === 'shared' && currentSharedDiary) {
+        await FirestoreService.delete('diaryEntries', deleteItem.id);
+      } else {
+        await FirestoreService.deleteDiaryEntry(deleteItem.id);
+      }
+      
+      // Remove from local state
+      setEntries(prev => prev.filter(entry => entry.id !== deleteItem.id));
+      setSelectedEntryId(null);
+      
+      setShowDeleteModal(false);
+      setDeleteItem(null);
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+      alert('Error al eliminar la entrada. Por favor, inténtalo de nuevo.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeleteItem(null);
   };
 
   const handleStartWriting = () => {
-    setIsTransitioning(true);
-    setTimeout(() => {
+    if (isAuthenticated) {
+      // User is already authenticated, just hide welcome screen
       setShowWelcome(false);
-    }, 600); // Duración del fade out
+      setIsTransitioning(false);
+    } else {
+      // User needs to authenticate first
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setShowWelcome(false);
+      }, 600); // Duración del fade out
+    }
   };
 
-  if (showWelcome) {
+  const handleSignOut = async () => {
+    try {
+      await AuthService.signOut();
+      setShowWelcome(true);
+      setIsTransitioning(false);
+      setSelectedEntryId(null);
+      setEntries([]);
+      setIsEditing(false);
+      setEditingEntry(null);
+      setCurrentDiaryType('personal');
+      setCurrentSharedDiary(null);
+      setShowSharedDiaries(false);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="h-screen w-screen bg-[#FAF8F1] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D97746] mx-auto mb-4"></div>
+          <p className="text-[#9A9B73] family-inter">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoadingEntries) {
+    return (
+      <div className="h-screen w-screen bg-[#FAF8F1] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D97746] mx-auto mb-4"></div>
+          <p className="text-[#9A9B73] family-inter">Cargando entradas...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (showWelcome || (!isAuthenticated && !isLoading)) {
     return <WelcomeScreen onStart={handleStartWriting} isTransitioning={isTransitioning} />;
+  }
+
+  // Show shared diaries list
+  if (showSharedDiaries) {
+    return (
+      <div className="h-screen bg-[#FAF8F1] flex flex-col md:flex-row animate-fadeIn">
+        {/* Left Panel - Shared Diaries List */}
+        <div className={`flex-shrink-0 flex flex-col transition-all duration-300 ${
+          isSidebarExpanded ? 'w-full md:w-80' : 'w-full md:w-16'
+        }`}>
+          <div className="flex-1 min-h-0">
+            <SharedDiaryList
+              onSelectDiary={handleSelectSharedDiary}
+              selectedDiaryId={currentSharedDiary?.id}
+            />
+          </div>
+        </div>
+
+        {/* Right Panel - Empty State */}
+        <div className="flex-1 bg-[#FAF8F1]">
+          <EmptyState />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -109,8 +464,13 @@ export default function App() {
             selectedEntry={selectedEntryId}
             onSelectEntry={handleSelectEntry}
             onNewEntry={handleNewEntry}
+            onSignOut={handleSignOut}
             isExpanded={isSidebarExpanded}
             onToggleSidebar={() => setIsSidebarExpanded(!isSidebarExpanded)}
+            currentDiaryType={currentDiaryType}
+            currentSharedDiary={currentSharedDiary}
+            onShowSharedDiaries={handleShowSharedDiaries}
+            onBackToPersonalDiary={handleBackToPersonalDiary}
           />
         </div>
 
@@ -132,14 +492,35 @@ export default function App() {
         )}
       </div>
 
-      {/* Right Panel - Entry Detail */}
+      {/* Right Panel - Entry Detail or Form */}
       <div className="flex-1 bg-[#FAF8F1]">
-        {selectedEntry ? (
-          <DiaryEntry entry={selectedEntry} />
+        {isEditing ? (
+          <EntryForm
+            onSave={handleSaveEntry}
+            onCancel={handleCancelEdit}
+            initialData={editingEntry || undefined}
+          />
+        ) : selectedEntry ? (
+          <DiaryEntry 
+            entry={selectedEntry} 
+            onDelete={handleDeleteEntry}
+            canDelete={true}
+          />
         ) : (
           <EmptyState />
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={cancelDelete}
+        onConfirm={confirmDelete}
+        title="Eliminar entrada"
+        message="¿Estás seguro de que quieres eliminar esta entrada? Se perderá todo el contenido permanentemente."
+        itemName={deleteItem?.name || ''}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }
