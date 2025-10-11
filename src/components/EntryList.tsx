@@ -68,7 +68,9 @@ export function EntryList({
                   }
                 </h2>
                 {currentDiaryType === 'shared' && (
-                  <Users className="w-4 h-4 text-[#D97746]" title="Diario compartido" />
+                  <div title="Diario compartido">
+                    <Users className="w-4 h-4 text-[#D97746]" />
+                  </div>
                 )}
               </div>
             )}

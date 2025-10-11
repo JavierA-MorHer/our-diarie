@@ -8,8 +8,6 @@ import {
   deleteDoc,
   query,
   where,
-  orderBy,
-  limit,
   Timestamp,
   type DocumentData
 } from 'firebase/firestore';
@@ -37,17 +35,20 @@ import type {
 import { db, storage, auth } from './config-simple';
 
 // Types for common operations
-export interface DiaryEntry {
+export interface DiaryEntry extends Record<string, unknown> {
   id?: string;
   title: string;
   content: string;
-  date: Date;
+  date: Date | Timestamp;
   mood?: string;
   tags?: string[];
   photos?: string[];
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
   userId: string;
+  diaryId?: string;
+  createdBy?: string;
+  lastModifiedBy?: string;
 }
 
 export interface UserProfile {
@@ -60,7 +61,7 @@ export interface UserProfile {
 }
 
 // Collaboration interfaces
-export interface SharedDiary {
+export interface SharedDiary extends Record<string, unknown> {
   id?: string;
   ownerId: string;
   shareCode: string;
@@ -72,7 +73,7 @@ export interface SharedDiary {
   lastModifiedBy: string;
 }
 
-export interface DiaryCollaborator {
+export interface DiaryCollaborator extends Record<string, unknown> {
   id?: string;
   diaryId: string;
   userId: string;
@@ -85,7 +86,7 @@ export interface DiaryCollaborator {
   status: 'active' | 'pending' | 'removed';
 }
 
-export interface DiaryInvitation {
+export interface DiaryInvitation extends Record<string, unknown> {
   id?: string;
   diaryId: string;
   invitedEmail: string;
@@ -126,7 +127,7 @@ export class FirestoreService {
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as T;
+        return { id: docSnap.id, ...docSnap.data() } as unknown as T;
       }
       return null;
     } catch (error) {
@@ -140,17 +141,17 @@ export class FirestoreService {
     constraints?: unknown[]
   ): Promise<T[]> {
     try {
-      let q = collection(db, collectionName);
+      let q: any = collection(db, collectionName);
       
       if (constraints) {
-        q = query(q, ...constraints);
+        q = query(q, ...(constraints as any));
       }
       
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
-      })) as T[];
+        ...(doc.data() as Record<string, unknown>)
+      })) as unknown as T[];
     } catch (error) {
       console.error(`Error getting documents from ${collectionName}:`, error);
       throw error;

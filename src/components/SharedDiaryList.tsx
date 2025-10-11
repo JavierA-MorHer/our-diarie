@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Share2, Plus, Settings, Eye } from 'react-feather';
+import { useState, useEffect } from 'react';
+import { Users, Share2, Plus, Eye } from 'react-feather';
 import { CollaborationService, AuthService, type SharedDiary } from '../firebase';
 import { CreateSharedDiaryModal } from './CreateSharedDiaryModal';
 import { InviteCollaboratorModal } from './InviteCollaboratorModal';

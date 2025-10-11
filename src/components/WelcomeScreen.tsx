@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import handsBookImage from '../assets/Hands - Book.png';
 import { AuthService } from '../firebase';
 
@@ -46,11 +46,11 @@ export function WelcomeScreen({ onStart, isTransitioning }: WelcomeScreenProps) 
     }
   };
 
-  const handleStart = () => {
-    if (isAuthenticated) {
-      onStart();
-    }
-  };
+  // const handleStart = () => {
+  //   if (isAuthenticated) {
+  //     onStart();
+  //   }
+  // };
 
   if (isLoading) {
     return (

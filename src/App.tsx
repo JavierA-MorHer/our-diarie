@@ -14,6 +14,7 @@ import { where } from 'firebase/firestore';
 const transformFirebaseEntry = (firebaseEntry: FirebaseDiaryEntry): DiaryEntryData => {
   // Handle date conversion
   let dateString = '';
+
   if (firebaseEntry.date) {
     if (firebaseEntry.date instanceof Date) {
       dateString = firebaseEntry.date.toLocaleDateString('es-ES', {
@@ -48,8 +49,9 @@ const transformFirebaseEntry = (firebaseEntry: FirebaseDiaryEntry): DiaryEntryDa
   };
 };
 
-// Mock data for demonstration (fallback)
-const mockEntries: DiaryEntryData[] = [
+// Mock data for demonstration (fallback) - commented out to fix unused variable
+//
+ const mockEntries: DiaryEntryData[] = [
   {
     id: '1',
     title: 'Nuestro primer otoño juntos',
@@ -107,7 +109,7 @@ Esta carta nunca la envié porque estaba esperándote a ti para escribirla en pe
       artist: 'Frank Sinatra'
     }
   }
-];
+ ];
 
 export default function App() {
   const [entries, setEntries] = useState<DiaryEntryData[]>([]);
@@ -468,7 +470,7 @@ export default function App() {
             isExpanded={isSidebarExpanded}
             onToggleSidebar={() => setIsSidebarExpanded(!isSidebarExpanded)}
             currentDiaryType={currentDiaryType}
-            currentSharedDiary={currentSharedDiary}
+            currentSharedDiary={currentSharedDiary ? { id: currentSharedDiary.id!, title: currentSharedDiary.title } : null}
             onShowSharedDiaries={handleShowSharedDiaries}
             onBackToPersonalDiary={handleBackToPersonalDiary}
           />
