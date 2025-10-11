@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Share2, Plus, Eye, RefreshCw } from 'react-feather';
+import { Users, Share2, Plus, Eye, ArrowLeft } from 'react-feather';
 import { CollaborationService, AuthService, type SharedDiary } from '../firebase';
 import { CreateSharedDiaryModal } from './CreateSharedDiaryModal';
 import { InviteCollaboratorModal } from './InviteCollaboratorModal';
@@ -8,23 +8,19 @@ interface SharedDiaryListProps {
   onSelectDiary: (diaryId: string) => void;
   selectedDiaryId?: string;
   refreshTrigger?: number; // Add refresh trigger prop
+  onBackToPersonalDiary?: () => void; // Add callback to return to personal diary
 }
 
-export function SharedDiaryList({ onSelectDiary, selectedDiaryId, refreshTrigger }: SharedDiaryListProps) {
+export function SharedDiaryList({ onSelectDiary, selectedDiaryId, refreshTrigger, onBackToPersonalDiary }: SharedDiaryListProps) {
   const [sharedDiaries, setSharedDiaries] = useState<SharedDiary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [selectedDiaryForInvite, setSelectedDiaryForInvite] = useState<SharedDiary | null>(null);
 
-  const loadSharedDiaries = async (isRefresh = false) => {
+  const loadSharedDiaries = async () => {
     try {
-      if (isRefresh) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
+      setIsLoading(true);
       
       const currentUser = AuthService.getCurrentUser();
       if (!currentUser) return;
@@ -35,7 +31,6 @@ export function SharedDiaryList({ onSelectDiary, selectedDiaryId, refreshTrigger
       console.error('Error loading shared diaries:', error);
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   };
 
@@ -46,10 +41,6 @@ export function SharedDiaryList({ onSelectDiary, selectedDiaryId, refreshTrigger
   const handleDiaryCreated = (diaryId: string) => {
     loadSharedDiaries();
     onSelectDiary(diaryId);
-  };
-
-  const handleRefresh = () => {
-    loadSharedDiaries(true);
   };
 
   const handleInviteCollaborator = (diary: SharedDiary) => {
@@ -76,25 +67,25 @@ export function SharedDiaryList({ onSelectDiary, selectedDiaryId, refreshTrigger
       {/* Header */}
       <div className="p-4 border-b border-[#B9AE9D]/30">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="family-lora text-lg text-[#4E443A]">Diarios Compartidos</h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="flex items-center gap-2 px-3 py-2 border border-[#B9AE9D] text-[#9A9B73] rounded-lg hover:bg-[#B9AE9D]/10 transition-colors family-inter text-sm disabled:opacity-50"
-              title="Refrescar lista"
-            >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Refrescando...' : 'Refrescar'}
-            </button>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-3 py-2 bg-[#D97746] text-white rounded-lg hover:bg-[#D97746]/90 transition-colors family-inter text-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Nuevo
-            </button>
+          <div className="flex items-center gap-3">
+            {onBackToPersonalDiary && (
+              <button
+                onClick={onBackToPersonalDiary}
+                className="text-[#9A9B73] hover:text-[#D97746] transition-colors"
+                title="Volver a mi diario personal"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            )}
+            <h2 className="family-lora text-lg text-[#4E443A]">Diarios Compartidos</h2>
           </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-3 py-2 bg-[#D97746] text-white rounded-lg hover:bg-[#D97746]/90 transition-colors family-inter text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Nuevo
+          </button>
         </div>
       </div>
 

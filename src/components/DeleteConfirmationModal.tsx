@@ -20,7 +20,6 @@ export function DeleteConfirmationModal({
   itemName,
   isDeleting = false 
 }: DeleteConfirmationModalProps) {
-  console.log('DeleteConfirmationModal render:', { isOpen, title, itemName });
   
   if (!isOpen) return null;
 

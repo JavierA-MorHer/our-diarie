@@ -188,26 +188,34 @@ export class FirestoreService {
   // Diary-specific operations
   static async getDiaryEntries(userId: string, limitCount?: number): Promise<DiaryEntry[]> {
     try {
-      // First get all entries for the user
+      console.log('🔍 getDiaryEntries - Fetching entries for userId:', userId);
+      // Get all entries for the user
       const userEntries = await this.getAll<DiaryEntry>('diaryEntries', [
         where('userId', '==', userId)
       ]);
-      
+      console.log('📦 getDiaryEntries - Total entries fetched:', userEntries.length);
+      console.log('📦 getDiaryEntries - Entries with diaryId:', userEntries.filter(e => e.diaryId).length);
+      console.log('📦 getDiaryEntries - Entry details:', userEntries.map(e => ({ id: e.id, title: e.title, diaryId: e.diaryId })));
+
+      // Filter out entries that belong to shared diaries (only keep personal diary entries)
+      const personalEntries = userEntries.filter(entry => !entry.diaryId);
+      console.log('✅ getDiaryEntries - Personal entries (no diaryId):', personalEntries.length);
+
       // Sort by date in descending order
-      const sortedEntries = userEntries.sort((a, b) => {
+      const sortedEntries = personalEntries.sort((a, b) => {
         const dateA = a.date instanceof Date ? a.date : a.date.toDate();
         const dateB = b.date instanceof Date ? b.date : b.date.toDate();
         return dateB.getTime() - dateA.getTime();
       });
-      
+
       // Apply limit if specified
       if (limitCount) {
         return sortedEntries.slice(0, limitCount);
       }
-      
+
       return sortedEntries;
     } catch (error) {
-      console.error('Error getting diary entries:', error);
+      console.error('❌ Error getting diary entries:', error);
       throw error;
     }
   }
@@ -328,6 +336,22 @@ export class AuthService {
   static isAuthenticated(): boolean {
     return !!auth.currentUser;
   }
+
+  static async getUserById(userId: string): Promise<User | null> {
+    try {
+      // Note: Firebase Auth doesn't provide a direct way to get user info by ID
+      // We'll need to get it from Firestore users collection if we store it there
+      // For now, return the current user if IDs match, otherwise return null
+      const currentUser = this.getCurrentUser();
+      if (currentUser && currentUser.uid === userId) {
+        return currentUser;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting user by ID:', error);
+      return null;
+    }
+  }
 }
 
 // Collaboration Service
@@ -374,20 +398,34 @@ export class CollaborationService {
   // Get shared diaries for user
   static async getSharedDiaries(userId: string): Promise<SharedDiary[]> {
     try {
-      // Get diaries where user is owner or collaborator
-      const [ownedDiaries, collaboratorDiaries] = await Promise.all([
-        FirestoreService.getAll<SharedDiary>('sharedDiaries', [where('ownerId', '==', userId)]),
-        FirestoreService.getAll<DiaryCollaborator>('diaryCollaborators', [
-          where('userId', '==', userId),
-          where('status', '==', 'active')
-        ])
+      // Get diaries where user is owner
+      const ownedDiaries = await FirestoreService.getAll<SharedDiary>('sharedDiaries', [
+        where('ownerId', '==', userId)
+      ]);
+
+      // Get collaborator records for this user
+      const collaboratorDiaries = await FirestoreService.getAll<DiaryCollaborator>('diaryCollaborators', [
+        where('userId', '==', userId),
+        where('status', '==', 'active')
       ]);
 
       // Get shared diaries for collaborators
       const collaboratorDiaryIds = collaboratorDiaries.map(c => c.diaryId);
-      const sharedDiaries = collaboratorDiaryIds.length > 0 
-        ? await FirestoreService.getAll<SharedDiary>('sharedDiaries', [where('id', 'in', collaboratorDiaryIds)])
-        : [];
+      
+      let sharedDiaries: SharedDiary[] = [];
+      if (collaboratorDiaryIds.length > 0) {
+        // Get each diary individually to avoid issues with 'in' query
+        for (const diaryId of collaboratorDiaryIds) {
+          try {
+            const diary = await FirestoreService.getById<SharedDiary>('sharedDiaries', diaryId);
+            if (diary) {
+              sharedDiaries.push(diary);
+            }
+          } catch (error) {
+            console.error('Error getting diary:', diaryId, error);
+          }
+        }
+      }
 
       // Combine and remove duplicates
       const allDiaries = [...ownedDiaries, ...sharedDiaries];
@@ -395,7 +433,6 @@ export class CollaborationService {
         index === self.findIndex(d => d.id === diary.id)
       );
 
-      console.log('Loaded shared diaries:', uniqueDiaries.length, 'for user:', userId);
       return uniqueDiaries;
     } catch (error) {
       console.error('Error getting shared diaries:', error);
@@ -546,6 +583,7 @@ export class CollaborationService {
       await FirestoreService.update<DiaryInvitation>('diaryInvitations', invitation.id!, {
         status: 'accepted'
       });
+      
     } catch (error) {
       console.error('Error accepting invitation:', error);
       throw error;
@@ -576,6 +614,7 @@ export class CollaborationService {
       return false;
     }
   }
+
 }
 
 // Test connection utility

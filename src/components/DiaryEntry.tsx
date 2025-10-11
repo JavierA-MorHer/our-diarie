@@ -1,5 +1,5 @@
 import { PhotoGallery } from './PhotoGallery';
-import { Trash2, Edit3 } from 'react-feather';
+import { Trash2, Edit3, Users, User } from 'react-feather';
 
 export interface DiaryEntryData {
   id: string;
@@ -16,7 +16,10 @@ export interface DiaryEntryData {
     artist: string;
   };
   createdBy?: string;
+  createdByName?: string;
   lastModifiedBy?: string;
+  diaryId?: string;
+  diaryTitle?: string;
 }
 
 interface DiaryEntryProps {
@@ -58,7 +61,26 @@ export function DiaryEntry({ entry, onDelete, onEdit, canEdit = false, canDelete
               </div>
             )}
           </div>
-          <p className="text-sm text-[#9A9B73] family-inter mb-4">{entry.date}</p>
+          <p className="text-sm text-[#9A9B73] family-inter mb-2">{entry.date}</p>
+
+          {/* Show diary and author info for shared diary entries */}
+          {(entry.diaryTitle || entry.createdByName) && (
+            <div className="flex items-center gap-3 mb-4 text-sm text-[#9A9B73] family-inter">
+              {entry.diaryTitle && (
+                <div className="flex items-center gap-1">
+                  <Users className="w-4 h-4" />
+                  <span>{entry.diaryTitle}</span>
+                </div>
+              )}
+              {entry.createdByName && (
+                <div className="flex items-center gap-1">
+                  <User className="w-4 h-4" />
+                  <span>Por {entry.createdByName}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="hand-drawn-divider"></div>
         </div>
 
@@ -75,11 +97,6 @@ export function DiaryEntry({ entry, onDelete, onEdit, canEdit = false, canDelete
             <PhotoGallery photos={entry.photos} />
           </div>
         )}
-
-        {/* Signature */}
-        <div className="mt-12 text-right">
-          <p className="family-handwritten text-xl text-[#D97746]">Con amor, nosotros 💕</p>
-        </div>
       </div>
     </div>
   );

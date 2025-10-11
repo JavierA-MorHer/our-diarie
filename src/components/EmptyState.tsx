@@ -51,25 +51,6 @@ export function EmptyState() {
             Cada página será un tesoro. Cada palabra, una memoria.
             Cada foto, un instante congelado en el tiempo.
           </p>
-
-          {/* Anotación manuscrita como llamado a la acción */}
-          <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t-2 border-dashed border-[#B9AE9D]/40 clear-both">
-            <p className="family-handwritten text-2xl sm:text-3xl text-[#D97746] mb-2 transform -rotate-1">
-              → Haz clic en "Nueva entrada" para escribir nuestro primer recuerdo...
-            </p>
-            <div className="ml-4 sm:ml-12">
-              <p className="family-handwritten text-lg sm:text-2xl text-[#9A9B73] transform rotate-1">
-                (¡No podemos esperar a ver qué escribes! ✨)
-              </p>
-            </div>
-          </div>
-
-          {/* Cita al final */}
-          <div className="mt-8 sm:mt-16 p-4 sm:p-6 bg-[#D97746]/5 border-l-4 border-[#D97746] italic">
-            <p className="family-inter text-sm sm:text-base text-[#4E443A]">
-              "Los mejores momentos no son solo recuerdos, son promesas de que la vida puede ser hermosa."
-            </p>
-          </div>
         </div>
       </div>
     </div>

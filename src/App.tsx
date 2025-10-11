@@ -3,15 +3,17 @@ import { EntryList } from './components/EntryList';
 import { DiaryEntry, type DiaryEntryData } from './components/DiaryEntry';
 import { EntryForm } from './components/EntryForm';
 import { EmptyState } from './components/EmptyState';
+import { SharedDiaryEmptyState } from './components/SharedDiaryEmptyState';
 import { CassettePlayer } from './components/CassettePlayer';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { SharedDiaryList } from './components/SharedDiaryList';
 import { DeleteConfirmationModal } from './components/DeleteConfirmationModal';
 import { AuthService, FirestoreService, CollaborationService, type DiaryEntry as FirebaseDiaryEntry, type SharedDiary } from './firebase';
 import { where } from 'firebase/firestore';
+import { Share2 } from 'react-feather';
 
 // Function to transform Firebase data to component format
-const transformFirebaseEntry = (firebaseEntry: FirebaseDiaryEntry): DiaryEntryData => {
+const transformFirebaseEntry = async (firebaseEntry: FirebaseDiaryEntry, sharedDiaryCache?: Map<string, string>, collaboratorsCache?: Map<string, string>): Promise<DiaryEntryData> => {
   // Handle date conversion
   let dateString = '';
 
@@ -32,6 +34,18 @@ const transformFirebaseEntry = (firebaseEntry: FirebaseDiaryEntry): DiaryEntryDa
     }
   }
 
+  // Get additional info for shared diary entries (only if we have caches)
+  let diaryTitle: string | undefined;
+  let createdByName: string | undefined;
+
+  if (firebaseEntry.diaryId && sharedDiaryCache) {
+    diaryTitle = sharedDiaryCache.get(firebaseEntry.diaryId);
+  }
+
+  if (firebaseEntry.createdBy && collaboratorsCache) {
+    createdByName = collaboratorsCache.get(firebaseEntry.createdBy);
+  }
+
   return {
     id: firebaseEntry.id || '',
     title: firebaseEntry.title,
@@ -45,7 +59,11 @@ const transformFirebaseEntry = (firebaseEntry: FirebaseDiaryEntry): DiaryEntryDa
     song: firebaseEntry.mood ? {
       title: firebaseEntry.mood,
       artist: 'Nuestro Diario'
-    } : undefined
+    } : undefined,
+    diaryId: firebaseEntry.diaryId,
+    diaryTitle,
+    createdBy: firebaseEntry.createdBy,
+    createdByName
   };
 };
 
@@ -172,29 +190,96 @@ export default function App() {
   }, []);
 
   // Load entries from Firebase when user is authenticated
-  const loadEntries = async (userId: string, diaryId?: string) => {
+  const loadEntries = async (userId: string, diaryId?: string, diaryType?: 'personal' | 'shared') => {
+    const effectiveDiaryType = diaryType || currentDiaryType;
+    console.log('🔄 loadEntries called with:', { userId, diaryId, diaryType, currentDiaryType, effectiveDiaryType });
     setIsLoadingEntries(true);
     try {
       let firebaseEntries: FirebaseDiaryEntry[];
-      
-      if (diaryId && currentDiaryType === 'shared') {
+
+      if (diaryId && effectiveDiaryType === 'shared') {
         // Load shared diary entries
+        console.log('📁 Loading shared diary entries for diaryId:', diaryId);
         firebaseEntries = await FirestoreService.getAll<FirebaseDiaryEntry>('diaryEntries', [
           where('diaryId', '==', diaryId)
         ]);
+        console.log('✅ Loaded shared diary entries:', firebaseEntries.length);
       } else {
         // Load personal diary entries
+        console.log('📁 Loading personal diary entries for userId:', userId);
         firebaseEntries = await FirestoreService.getDiaryEntries(userId);
+        console.log('✅ Loaded personal diary entries:', firebaseEntries.length);
       }
-      
-      const transformedEntries = firebaseEntries.map(transformFirebaseEntry);
+
+      // Build caches for shared diary info and collaborator names
+      console.log('🗂️  Building caches for additional info...');
+      const sharedDiaryCache = new Map<string, string>();
+      const collaboratorsCache = new Map<string, string>();
+
+      // Add current user to collaborators cache
+      const currentUser = AuthService.getCurrentUser();
+      if (currentUser) {
+        collaboratorsCache.set(
+          currentUser.uid,
+          currentUser.displayName || currentUser.email?.split('@')[0] || 'Usuario'
+        );
+        console.log('👤 Added current user to cache:', currentUser.uid);
+      }
+
+      // Get unique diary IDs and creator IDs
+      const diaryIds = new Set<string>();
+      firebaseEntries.forEach(entry => {
+        if (entry.diaryId) diaryIds.add(entry.diaryId);
+      });
+      console.log('📚 Found unique diary IDs:', diaryIds.size);
+
+      // Load diary titles
+      if (diaryIds.size > 0) {
+        try {
+          await Promise.all(
+            Array.from(diaryIds).map(async (id) => {
+              try {
+                console.log('🔍 Loading info for diary:', id);
+                const diary = await FirestoreService.getById<SharedDiary>('sharedDiaries', id);
+                if (diary?.title) {
+                  sharedDiaryCache.set(id, diary.title);
+                  console.log('📖 Cached diary title:', diary.title);
+                }
+
+                // Load collaborators for this diary
+                const collaborators = await CollaborationService.getCollaborators(id);
+                console.log('👥 Found collaborators:', collaborators.length);
+                collaborators.forEach(collab => {
+                  if (collab.userName) {
+                    collaboratorsCache.set(collab.userId, collab.userName);
+                    console.log('👤 Cached collaborator:', collab.userName);
+                  }
+                });
+              } catch (err) {
+                console.error(`❌ Error loading diary ${id}:`, err);
+              }
+            })
+          );
+        } catch (error) {
+          console.error('❌ Error loading shared diary info:', error);
+        }
+      }
+
+      // Transform entries with caches
+      console.log('🔄 Transforming entries...');
+      const transformedEntries = await Promise.all(
+        firebaseEntries.map(entry => transformFirebaseEntry(entry, sharedDiaryCache, collaboratorsCache))
+      );
+      console.log('✅ Transformed entries:', transformedEntries.length);
+      console.log('📝 Entries data:', transformedEntries.map(e => ({ id: e.id, title: e.title, diaryId: e.diaryId, diaryTitle: e.diaryTitle })));
       setEntries(transformedEntries);
     } catch (error) {
-      console.error('Error loading entries:', error);
+      console.error('❌ Error loading entries:', error);
       // Show empty state instead of mock data
       setEntries([]);
       alert('Error al cargar las entradas. Por favor, verifica tu conexión e intenta de nuevo.');
     } finally {
+      console.log('✅ loadEntries finished, isLoadingEntries = false');
       setIsLoadingEntries(false);
     }
   };
@@ -302,9 +387,9 @@ export default function App() {
       setShowSharedDiaries(false);
       setSelectedEntryId(null);
       setIsEditing(false);
-      
-      // Load entries for this shared diary
-      await loadEntries(currentUser.uid, diaryId);
+
+      // Load entries for this shared diary - pass 'shared' explicitly to avoid state timing issues
+      await loadEntries(currentUser.uid, diaryId, 'shared');
     } catch (error) {
       console.error('Error selecting shared diary:', error);
     }
@@ -317,14 +402,20 @@ export default function App() {
 
       setCurrentDiaryType('personal');
       setCurrentSharedDiary(null);
+      setShowSharedDiaries(false);
       setSelectedEntryId(null);
       setIsEditing(false);
-      
-      // Load personal entries
-      await loadEntries(currentUser.uid);
+
+      // Load personal entries - pass 'personal' explicitly
+      await loadEntries(currentUser.uid, undefined, 'personal');
     } catch (error) {
       console.error('Error switching to personal diary:', error);
     }
+  };
+
+  const handleBackFromSharedEntry = () => {
+    // When viewing a shared diary entry, just deselect it to show the diary list
+    setSelectedEntryId(null);
   };
 
   const handleShowSharedDiaries = () => {
@@ -445,13 +536,33 @@ export default function App() {
               onSelectDiary={handleSelectSharedDiary}
               selectedDiaryId={currentSharedDiary?.id}
               refreshTrigger={sharedDiariesRefreshTrigger}
+              onBackToPersonalDiary={handleBackToPersonalDiary}
             />
           </div>
         </div>
 
         {/* Right Panel - Empty State */}
         <div className="flex-1 bg-[#FAF8F1]">
-          <EmptyState />
+          <div className="h-full p-8 flex items-center justify-center">
+            <div className="text-center max-w-md">
+              <div className="w-16 h-16 bg-[#D97746]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Share2 className="w-8 h-8 text-[#D97746]" />
+              </div>
+              <h2 className="family-lora text-2xl text-[#4E443A] mb-4">
+                Diarios Compartidos
+              </h2>
+              <p className="text-[#9A9B73] family-inter mb-6">
+                Aquí puedes ver y gestionar todos los diarios que compartes con otros.
+                Crea un nuevo diario compartido para comenzar a colaborar.
+              </p>
+              <button
+                onClick={handleShowSharedDiaries}
+                className="bg-[#D97746] hover:bg-[#D97746]/90 text-white py-3 px-6 rounded-lg transition-colors family-inter"
+              >
+                Crear nuevo diario compartido
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -477,11 +588,12 @@ export default function App() {
             currentSharedDiary={currentSharedDiary ? { id: currentSharedDiary.id!, title: currentSharedDiary.title } : null}
             onShowSharedDiaries={handleShowSharedDiaries}
             onBackToPersonalDiary={handleBackToPersonalDiary}
+            onBackFromEntry={handleBackFromSharedEntry}
           />
         </div>
 
         {/* Fixed Music Player */}
-        {isSidebarExpanded && (
+        {/* {isSidebarExpanded && (
           <div className="border-t border-[#B9AE9D]/30 bg-[#FAF8F1] p-4">
             <h4 className="family-lora mb-3 text-[#4E443A]">Nuestra canción</h4>
             {selectedEntry?.song ? (
@@ -495,7 +607,7 @@ export default function App() {
               </div>
             )}
           </div>
-        )}
+        )} */}
       </div>
 
       {/* Right Panel - Entry Detail or Form */}
@@ -507,10 +619,16 @@ export default function App() {
             initialData={editingEntry || undefined}
           />
         ) : selectedEntry ? (
-          <DiaryEntry 
-            entry={selectedEntry} 
+          <DiaryEntry
+            entry={selectedEntry}
             onDelete={handleDeleteEntry}
             canDelete={true}
+          />
+        ) : currentDiaryType === 'shared' && currentSharedDiary && entries.length === 0 ? (
+          <SharedDiaryEmptyState
+            diaryTitle={currentSharedDiary.title}
+            onCreateEntry={handleNewEntry}
+            onCreateNewDiary={handleShowSharedDiaries}
           />
         ) : (
           <EmptyState />

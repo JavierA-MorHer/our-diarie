@@ -14,6 +14,7 @@ interface EntryListProps {
   currentSharedDiary?: { id: string; title: string } | null;
   onShowSharedDiaries?: () => void;
   onBackToPersonalDiary?: () => void;
+  onBackFromEntry?: () => void; // New callback for closing entries
 }
 
 // Rotaciones aleatorias para cada entrada (se mantienen consistentes)
@@ -22,18 +23,19 @@ const getRotation = (index: number) => {
   return rotations[index % rotations.length];
 };
 
-export function EntryList({ 
-  entries, 
-  selectedEntry, 
-  onSelectEntry, 
-  onNewEntry, 
-  onSignOut, 
-  isExpanded, 
+export function EntryList({
+  entries,
+  selectedEntry,
+  onSelectEntry,
+  onNewEntry,
+  onSignOut,
+  isExpanded,
   onToggleSidebar,
   currentDiaryType = 'personal',
   currentSharedDiary,
   onShowSharedDiaries,
-  onBackToPersonalDiary
+  onBackToPersonalDiary,
+  onBackFromEntry
 }: EntryListProps) {
   const user = AuthService.getCurrentUser();
   const userName = user?.displayName || user?.email?.split('@')[0] || 'Usuario';
@@ -52,19 +54,19 @@ export function EntryList({
             </button>
             {isExpanded && (
               <div className="flex items-center gap-2">
-                {currentDiaryType === 'shared' && onBackToPersonalDiary && (
+                {currentDiaryType === 'shared' && (
                   <button
-                    onClick={onBackToPersonalDiary}
+                    onClick={selectedEntry && onBackFromEntry ? onBackFromEntry : onBackToPersonalDiary}
                     className="text-[#9A9B73] hover:text-[#D97746] transition-colors"
-                    title="Volver a mi diario personal"
+                    title={selectedEntry ? "Cerrar entrada" : "Volver a mi diario personal"}
                   >
                     <ArrowLeft className="w-4 h-4" />
                   </button>
                 )}
                 <h2 className="family-lora text-sm md:text-base text-[#4E443A]">
-                  {currentDiaryType === 'shared' && currentSharedDiary 
-                    ? currentSharedDiary.title 
-                    : 'El Diario de Lo Nuestro'
+                  {currentDiaryType === 'shared' && currentSharedDiary
+                    ? currentSharedDiary.title
+                    : 'Mi Diario Personal'
                   }
                 </h2>
                 {currentDiaryType === 'shared' && (
@@ -87,9 +89,6 @@ export function EntryList({
                   <Share2 className="w-4 h-4" />
                 </button>
               )}
-              <span className="text-xs text-[#9A9B73] family-inter">
-                ({userName})
-              </span>
               <button
                 onClick={onSignOut}
                 className="text-[#9A9B73] hover:text-[#D97746] transition-colors"
@@ -175,6 +174,21 @@ export function EntryList({
           </div>
         )}
       </div>
+
+      {/* Footer con información del usuario */}
+      {isExpanded && (
+        <div className="p-3 md:p-6 border-t border-[#B9AE9D]/30 bg-[#FAF8F1]/50">
+          <div className="flex items-center justify-between text-xs text-[#9A9B73] family-inter">
+            <span className="flex items-center gap-1">
+              <Heart className="w-3 h-3" />
+              {userName}
+            </span>
+            <span className="text-[#B9AE9D]">
+              {currentDiaryType === 'shared' ? 'Compartido' : 'Personal'}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
