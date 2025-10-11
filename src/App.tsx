@@ -528,7 +528,7 @@ export default function App() {
     return (
       <div className="h-screen bg-[#FAF8F1] flex flex-col md:flex-row animate-fadeIn">
         {/* Left Panel - Shared Diaries List */}
-        <div className={`flex-shrink-0 flex flex-col transition-all duration-300 ${
+        <div className={`flex-shrink-0 flex flex-col transition-all duration-500 ease-in-out ${
           isSidebarExpanded ? 'w-full md:w-80' : 'w-full md:w-16'
         }`}>
           <div className="flex-1 min-h-0">
@@ -571,7 +571,7 @@ export default function App() {
   return (
     <div className="h-screen bg-[#FAF8F1] flex flex-col md:flex-row animate-fadeIn">
       {/* Left Panel - Entry List + Music Player */}
-      <div className={`flex-shrink-0 flex flex-col transition-all duration-300 ${
+      <div className={`flex-shrink-0 flex flex-col transition-all duration-500 ease-in-out ${
         isSidebarExpanded ? 'w-full md:w-80' : 'w-full md:w-16'
       }`}>
         {/* Entry List */}

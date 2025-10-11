@@ -64,27 +64,27 @@ export function WelcomeScreen({ onStart, isTransitioning }: WelcomeScreenProps) 
   }
 
   return (
-    <div className={`h-screen w-screen bg-[#FAF8F1] flex items-center justify-center p-8 transition-opacity duration-600 ${
+    <div className={`min-h-screen w-screen bg-[#FAF8F1] flex items-start sm:items-center justify-center px-4 py-4 sm:p-8 transition-opacity duration-600 overflow-y-auto ${
       isTransitioning ? 'opacity-0' : 'opacity-100'
     }`}>
-      <div className="text-center max-w-2xl">
-        <div className="mb-12 relative inline-block">
+      <div className="text-center max-w-2xl w-full my-auto">
+        <div className="mb-4 sm:mb-8 md:mb-12 relative inline-block">
           <img
             src={handsBookImage}
             alt="Libro de memorias"
-            className="w-80 h-80 mx-auto object-contain drop-shadow-2xl"
+            className="w-32 h-32 sm:w-56 sm:h-56 md:w-72 md:h-72 mx-auto object-contain drop-shadow-2xl"
           />
         </div>
 
-        <h1 className="family-handwritten text-5xl mb-6 text-[#4E443A]">
+        <h1 className="family-handwritten text-2xl sm:text-4xl md:text-5xl mb-3 sm:mb-5 md:mb-6 text-[#4E443A] px-2 leading-tight">
           Bienvenida a Nuestro Diario
         </h1>
 
-        <p className="text-lg text-[#9A9B73] family-inter leading-relaxed mb-4">
+        <p className="text-sm sm:text-base md:text-lg text-[#9A9B73] family-inter leading-relaxed mb-2 sm:mb-3 md:mb-4 px-2">
           Este es nuestro espacio especial, donde cada momento compartido se convierte en un tesoro guardado.
         </p>
 
-        <p className="text-md text-[#9A9B73] family-inter leading-relaxed mb-12">
+        <p className="text-xs sm:text-sm md:text-md text-[#9A9B73] family-inter leading-relaxed mb-6 sm:mb-10 md:mb-12 px-2">
           Aquí escribiremos sobre las risas, los abrazos, las aventuras y esos pequeños instantes
           que hacen que nuestro amor sea único. Cada página es una promesa de que siempre recordaremos
           lo hermoso que es estar juntos.

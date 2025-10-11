@@ -40,20 +40,20 @@ export function EntryList({
   const user = AuthService.getCurrentUser();
   const userName = user?.displayName || user?.email?.split('@')[0] || 'Usuario';
   return (
-    <div className="w-full h-full bg-[#FAF8F1] flex flex-col relative shadow-[4px_0_12px_rgba(0,0,0,0.06)]">
+    <div className="w-full h-full bg-[#FAF8F1] flex flex-col relative shadow-[4px_0_12px_rgba(0,0,0,0.06)] transition-all duration-500 ease-in-out overflow-hidden">
       {/* Header */}
-      <div className="p-3 md:p-6 border-b border-[#B9AE9D]/30">
+      <div className="p-3 md:p-6 border-b border-[#B9AE9D]/30 transition-all duration-500 ease-in-out">
         <div className="flex items-center justify-between mb-2 md:mb-4">
           <div className="flex items-center gap-2">
             <button
               onClick={onToggleSidebar}
-              className="text-[#D97746] hover:text-[#D97746]/80 transition-colors"
+              className="text-[#D97746] hover:text-[#D97746]/80 transition-all duration-200"
               aria-label={isExpanded ? 'Colapsar sidebar' : 'Expandir sidebar'}
             >
               <Heart className="w-5 h-5" />
             </button>
             {isExpanded && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 animate-fadeIn">
                 {currentDiaryType === 'shared' && (
                   <button
                     onClick={selectedEntry && onBackFromEntry ? onBackFromEntry : onBackToPersonalDiary}
@@ -77,9 +77,9 @@ export function EntryList({
               </div>
             )}
           </div>
-          
+
           {isExpanded && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 animate-fadeIn">
               {currentDiaryType === 'personal' && onShowSharedDiaries && (
                 <button
                   onClick={onShowSharedDiaries}
@@ -100,31 +100,41 @@ export function EntryList({
           )}
         </div>
 
-        {isExpanded && (
-          <button
-            onClick={onNewEntry}
-            className="w-full bg-[#D97746] hover:bg-[#D97746]/90 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors family-inter text-sm md:text-base"
-          >
-            <Plus className="w-4 h-4" />
-            Nueva entrada
-          </button>
-        )}
+        <div className="transition-all duration-500 ease-in-out">
+          {isExpanded ? (
+            <button
+              onClick={onNewEntry}
+              className="w-full bg-[#D97746] hover:bg-[#D97746]/90 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 ease-in-out family-inter text-sm md:text-base animate-fadeIn"
+            >
+              <Plus className="w-4 h-4" />
+              Nueva entrada
+            </button>
+          ) : (
+            <button
+              onClick={onNewEntry}
+              className="w-full bg-[#D97746] hover:bg-[#D97746]/90 text-white py-2 px-2 rounded-lg flex items-center justify-center transition-all duration-300 ease-in-out mt-2"
+              title="Nueva entrada"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Entries List */}
-      <div className="flex-1 overflow-y-auto min-h-0">
+      {/* Entries List - Hidden on mobile when collapsed */}
+      <div className={`flex-1 overflow-y-auto min-h-0 transition-all duration-500 ease-in-out ${!isExpanded ? 'hidden md:block' : ''}`}>
         {entries.length === 0 ? (
           <div className="p-6 text-center text-[#9A9B73] family-inter">
             {isExpanded && (
-              <>
+              <div className="animate-fadeIn">
                 <Calendar className="w-8 h-8 mx-auto mb-3 opacity-50" />
                 <p>Aún no hay entradas.</p>
                 <p className="text-sm mt-1">¡Crea tu primera memoria!</p>
-              </>
+              </div>
             )}
           </div>
         ) : (
-          <div className={isExpanded ? "p-2 md:p-4" : "p-2"}>
+          <div className={`transition-all duration-500 ease-in-out ${isExpanded ? "p-2 md:p-4" : "p-2"}`}>
             {entries.map((entry, index) => {
               const isSelected = selectedEntry === entry.id;
               const rotation = isSelected ? 0 : getRotation(index);
@@ -177,7 +187,7 @@ export function EntryList({
 
       {/* Footer con información del usuario */}
       {isExpanded && (
-        <div className="p-3 md:p-6 border-t border-[#B9AE9D]/30 bg-[#FAF8F1]/50">
+        <div className="p-3 md:p-6 border-t border-[#B9AE9D]/30 bg-[#FAF8F1]/50 animate-fadeIn">
           <div className="flex items-center justify-between text-xs text-[#9A9B73] family-inter">
             <span className="flex items-center gap-1">
               <Heart className="w-3 h-3" />

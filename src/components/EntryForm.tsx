@@ -242,30 +242,31 @@ export function EntryForm({ onSave, onCancel, initialData }: EntryFormProps) {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-4 pt-6">
+          <div className="flex gap-2 sm:gap-4 pt-6">
             <button
               type="button"
               onClick={handleCancel}
-              className="flex items-center gap-2 px-6 py-3 border border-[#B9AE9D] text-[#9A9B73] rounded-lg hover:bg-[#B9AE9D]/10 transition-colors family-inter"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-3 py-2 sm:px-6 sm:py-3 border border-[#B9AE9D] text-[#9A9B73] rounded-lg hover:bg-[#B9AE9D]/10 transition-colors family-inter text-sm sm:text-base flex-1 sm:flex-initial"
             >
               <X className="w-4 h-4" />
-              Cancelar
+              <span className="hidden sm:inline">Cancelar</span>
             </button>
-            
+
             <button
               type="submit"
               disabled={isSaving || isUploadingPhotos || !title.trim() || !date || !content.trim()}
-              className="flex items-center gap-2 px-6 py-3 bg-[#D97746] text-white rounded-lg hover:bg-[#D97746]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors family-inter"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-3 py-2 sm:px-6 sm:py-3 bg-[#D97746] text-white rounded-lg hover:bg-[#D97746]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors family-inter text-sm sm:text-base flex-1 sm:flex-initial"
             >
               {isSaving || isUploadingPhotos ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  {isUploadingPhotos ? 'Subiendo fotos...' : 'Guardando...'}
+                  <span className="hidden sm:inline">{isUploadingPhotos ? 'Subiendo fotos...' : 'Guardando...'}</span>
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  Guardar entrada
+                  <span className="hidden sm:inline">Guardar entrada</span>
+                  <span className="sm:hidden">Guardar</span>
                 </>
               )}
             </button>
