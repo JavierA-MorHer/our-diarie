@@ -446,6 +446,16 @@ export class CollaborationService {
     }
   }
 
+  // Get shared diary by ID
+  static async getSharedDiaryById(diaryId: string): Promise<SharedDiary | null> {
+    try {
+      return await FirestoreService.getById<SharedDiary>('sharedDiaries', diaryId);
+    } catch (error) {
+      console.error('Error getting shared diary by ID:', error);
+      throw error;
+    }
+  }
+
   // Add collaborator
   private static async addCollaborator(
     diaryId: string, 
