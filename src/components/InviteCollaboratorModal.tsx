@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Mail, UserPlus, Users } from 'react-feather';
+import { useState } from 'react';
+import { X, Mail, UserPlus, Users, CheckCircle, AlertCircle } from 'react-feather';
 import { CollaborationService } from '../firebase';
 
 interface InviteCollaboratorModalProps {
@@ -17,6 +17,7 @@ export function InviteCollaboratorModal({ isOpen, onClose, diaryId, diaryTitle, 
   const [isInviting, setIsInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [emailStatus, setEmailStatus] = useState<'pending' | 'sent' | 'failed' | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,19 +35,23 @@ export function InviteCollaboratorModal({ isOpen, onClose, diaryId, diaryTitle, 
     setIsInviting(true);
     setError(null);
     setSuccess(null);
+    setEmailStatus('pending');
 
     try {
       await CollaborationService.inviteCollaborator(diaryId, email.trim(), role);
+      
       // Show invitation link for testing
       const invitationLink = `${window.location.origin}?invite=${shareCode}`;
       console.log(`Invitation sent to ${email} for diary ${diaryId}`);
       console.log(`Invitation link: ${invitationLink}`);
       
+      setEmailStatus('sent');
       setSuccess(`Invitación enviada a ${email}\n\nEnlace para pruebas: ${invitationLink}`);
       setEmail('');
       onInvitationSent();
     } catch (error) {
       console.error('Error inviting collaborator:', error);
+      setEmailStatus('failed');
       setError('Error al enviar la invitación. Por favor, inténtalo de nuevo.');
     } finally {
       setIsInviting(false);
@@ -58,6 +63,7 @@ export function InviteCollaboratorModal({ isOpen, onClose, diaryId, diaryTitle, 
     setEmail('');
     setError(null);
     setSuccess(null);
+    setEmailStatus(null);
   };
 
   if (!isOpen) return null;
@@ -152,6 +158,34 @@ export function InviteCollaboratorModal({ isOpen, onClose, diaryId, diaryTitle, 
               </label>
             </div>
           </div>
+
+          {/* Email Status Indicator */}
+          {emailStatus && (
+            <div className={`rounded-lg p-3 flex items-center gap-3 ${
+              emailStatus === 'pending' ? 'bg-blue-50 border border-blue-200' :
+              emailStatus === 'sent' ? 'bg-green-50 border border-green-200' :
+              'bg-red-50 border border-red-200'
+            }`}>
+              {emailStatus === 'pending' && (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  <p className="text-blue-700 text-sm family-inter">Enviando invitación por email...</p>
+                </>
+              )}
+              {emailStatus === 'sent' && (
+                <>
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <p className="text-green-700 text-sm family-inter">Email enviado exitosamente</p>
+                </>
+              )}
+              {emailStatus === 'failed' && (
+                <>
+                  <AlertCircle className="w-4 h-4 text-red-500" />
+                  <p className="text-red-700 text-sm family-inter">Error al enviar email (la invitación se guardó)</p>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Success Message */}
           {success && (

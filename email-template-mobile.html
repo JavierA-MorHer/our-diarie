@@ -1,0 +1,54 @@
+<div style="font-family: Arial, sans-serif; padding: 20px; background: #FAF8F1; border-radius: 10px;">
+    
+    <!-- Header Mobile -->
+    <div style="background: #D97746; color: white; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px;">
+        <h1 style="margin: 0; font-size: 24px;">📖 Nuestro Diario</h1>
+        <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">Tu espacio para crear memorias juntos</p>
+    </div>
+    
+    <!-- Content Mobile -->
+    <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        
+        <h2 style="color: #4E443A; margin: 0 0 15px 0; font-size: 20px;">¡Hola! 👋</h2>
+        
+        <p style="color: #4E443A; margin: 0 0 20px 0; font-size: 16px;">
+            <strong>{{inviter_name}}</strong> te ha invitado a colaborar en un diario compartido.
+        </p>
+        
+        <!-- Diary Info -->
+        <div style="background: #F5F5F5; padding: 15px; border-radius: 6px; border-left: 3px solid #D97746; margin: 15px 0;">
+            <h3 style="color: #4E443A; margin: 0 0 10px 0; font-size: 18px;">📚 {{diary_title}}</h3>
+            <p style="color: #9A9B73; margin: 0 0 8px 0; font-size: 14px;"><strong>Rol:</strong> {{role}}</p>
+            <p style="color: #9A9B73; margin: 0; font-size: 14px;"><strong>Expira:</strong> {{expires_date}}</p>
+        </div>
+        
+        <!-- CTA Button Mobile -->
+        <div style="text-align: center; margin: 25px 0;">
+            <a href="{{invitation_link}}" 
+               style="background: #D97746; color: white; padding: 12px 25px; text-decoration: none; border-radius: 20px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 3px 10px rgba(217, 119, 70, 0.3);">
+                ✨ Aceptar Invitación
+            </a>
+        </div>
+        
+        <!-- Features Mobile -->
+        <div style="margin: 20px 0;">
+            <h4 style="color: #4E443A; font-size: 16px; margin: 0 0 10px 0;">¿Qué puedes hacer?</h4>
+            <ul style="color: #4E443A; padding-left: 15px; margin: 0; font-size: 14px;">
+                <li style="margin-bottom: 6px;">📝 Crear y editar entradas</li>
+                <li style="margin-bottom: 6px;">📸 Compartir fotos</li>
+                <li style="margin-bottom: 6px;">🎵 Agregar música</li>
+                <li style="margin-bottom: 6px;">💝 Colaborar en tiempo real</li>
+            </ul>
+        </div>
+        
+    </div>
+    
+    <!-- Footer Mobile -->
+    <div style="text-align: center; color: #9A9B73; font-size: 12px;">
+        <p style="margin: 0 0 10px 0;">Si no puedes hacer clic en el botón:</p>
+        <p style="margin: 0; word-break: break-all; background: #F5F5F5; padding: 10px; border-radius: 4px;">
+            <a href="{{invitation_link}}" style="color: #D97746;">{{invitation_link}}</a>
+        </p>
+    </div>
+    
+</div>

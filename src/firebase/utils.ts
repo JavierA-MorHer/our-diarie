@@ -470,8 +470,30 @@ export class CollaborationService {
 
       await FirestoreService.create<DiaryInvitation>('diaryInvitations', invitation);
 
-      // TODO: Send email invitation
-      console.log(`Invitation sent to ${email} for diary ${diaryId}`);
+      // Send email invitation
+      try {
+        const { EmailService } = await import('../services/emailService');
+        const inviterName = currentUser.displayName || currentUser.email?.split('@')[0] || 'Usuario';
+        const invitationLink = `${window.location.origin}?invite=${shareCode}`;
+        
+        await EmailService.sendInvitationEmail({
+          to_email: email,
+          diary_title: sharedDiary.title,
+          inviter_name: inviterName,
+          invitation_link: invitationLink,
+          role: role === 'editor' ? 'Editor' : 'Visualizador',
+          expires_date: expiresAt.toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })
+        });
+        
+        console.log(`Email invitation sent to ${email} for diary ${diaryId}`);
+      } catch (emailError) {
+        console.error('Error sending email invitation:', emailError);
+        // No lanzamos el error para que la invitación se guarde aunque falle el email
+      }
     } catch (error) {
       console.error('Error inviting collaborator:', error);
       throw error;

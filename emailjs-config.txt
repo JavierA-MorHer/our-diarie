@@ -1,0 +1,71 @@
+CONFIGURACIÓN DE EMAILJS PARA NUESTRO DIARIO
+===============================================
+
+1. CONFIGURACIÓN DE LA PLANTILLA
+================================
+
+ASUNTO (Subject):
+-----------------
+Nueva Invitación: {{diary_title}}
+
+VARIABLES REQUERIDAS:
+---------------------
+{{to_email}} - Email del destinatario
+{{diary_title}} - Título del diario
+{{inviter_name}} - Nombre de quien invita
+{{inviter_email}} - Email de quien invita
+{{invitation_link}} - Enlace de invitación
+{{role}} - Rol (Editor/Visualizador)
+{{expires_date}} - Fecha de expiración
+
+CONFIGURACIÓN DE ENVÍO:
+-----------------------
+To Email: {{to_email}}
+From Name: Nuestro Diario
+From Email: (Usar dirección predeterminada de EmailJS)
+Reply To: {{inviter_email}}
+Bcc: (opcional)
+Cc: (opcional)
+
+2. ARCHIVOS DE PLANTILLA
+========================
+
+- email-template.html (Para Desktop - copiar y pegar en EmailJS)
+- email-template-mobile.html (Para Mobile - copiar y pegar en EmailJS)
+
+3. VARIABLES DE ENTORNO
+=======================
+
+Crear archivo .env.local con:
+VITE_EMAILJS_SERVICE_ID=tu_service_id
+VITE_EMAILJS_TEMPLATE_ID=tu_template_id
+VITE_EMAILJS_PUBLIC_KEY=tu_public_key
+
+4. PASOS PARA CONFIGURAR
+========================
+
+1. Ir a https://www.emailjs.com/
+2. Crear cuenta gratuita
+3. Conectar servicio de email (Gmail, Outlook, etc.)
+4. Crear nueva plantilla
+5. Copiar contenido de email-template.html en la plantilla
+6. Configurar las variables {{variable_name}}
+7. Obtener Service ID, Template ID y Public Key
+8. Configurar variables de entorno
+9. Reiniciar servidor de desarrollo
+
+5. TESTING
+==========
+
+Para probar el envío:
+1. Crear un diario compartido
+2. Invitar a un colaborador
+3. Verificar que llegue el email
+4. Probar el enlace de invitación
+
+NOTAS IMPORTANTES:
+==================
+- La versión gratuita permite 200 emails/mes
+- El sistema guarda la invitación aunque falle el email
+- Los enlaces de invitación expiran en 7 días
+- La plantilla es responsive (funciona en móvil y desktop)

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invitación a Colaborar</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, #D97746, #B9AE9D); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">
+            📖 Nuestro Diario
+        </h1>
+        <p style="color: white; margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">
+            Tu espacio para crear memorias juntos
+        </p>
+    </div>
+    
+    <!-- Main Content -->
+    <div style="background: #FAF8F1; padding: 40px; border-radius: 0 0 10px 10px; border: 1px solid #B9AE9D;">
+        
+        <!-- Greeting -->
+        <div style="margin-bottom: 30px;">
+            <h2 style="color: #4E443A; font-size: 24px; margin: 0 0 15px 0;">
+                ¡Hola! 👋
+            </h2>
+            <p style="color: #4E443A; font-size: 16px; margin: 0;">
+                <strong>{{inviter_name}}</strong> te ha invitado a colaborar en un diario compartido especial.
+            </p>
+        </div>
+        
+        <!-- Diary Info Card -->
+        <div style="background: white; padding: 25px; border-radius: 8px; border-left: 4px solid #D97746; margin: 25px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h3 style="color: #4E443A; margin: 0 0 10px 0; font-size: 20px;">
+                📚 {{diary_title}}
+            </h3>
+            <p style="color: #9A9B73; margin: 0 0 15px 0; font-size: 14px;">
+                <strong>Tu rol:</strong> {{role}}
+            </p>
+            <p style="color: #9A9B73; margin: 0; font-size: 14px;">
+                <strong>Expira:</strong> {{expires_date}}
+            </p>
+        </div>
+        
+        <!-- CTA Button -->
+        <div style="text-align: center; margin: 35px 0;">
+            <a href="{{invitation_link}}" 
+               style="background: #D97746; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 15px rgba(217, 119, 70, 0.3);">
+                ✨ Aceptar Invitación
+            </a>
+        </div>
+        
+        <!-- Features -->
+        <div style="margin: 30px 0;">
+            <h4 style="color: #4E443A; font-size: 18px; margin: 0 0 15px 0;">
+                ¿Qué puedes hacer?
+            </h4>
+            <ul style="color: #4E443A; padding-left: 20px; margin: 0;">
+                <li style="margin-bottom: 8px;">📝 Crear y editar entradas del diario</li>
+                <li style="margin-bottom: 8px;">📸 Compartir fotos y recuerdos</li>
+                <li style="margin-bottom: 8px;">🎵 Agregar música a tus historias</li>
+                <li style="margin-bottom: 8px;">💝 Colaborar en tiempo real</li>
+            </ul>
+        </div>
+        
+        <!-- Footer -->
+        <div style="border-top: 1px solid #B9AE9D; padding-top: 20px; margin-top: 30px; text-align: center;">
+            <p style="color: #9A9B73; font-size: 14px; margin: 0;">
+                Si no puedes hacer clic en el botón, copia y pega este enlace:<br>
+                <a href="{{invitation_link}}" style="color: #D97746; word-break: break-all;">{{invitation_link}}</a>
+            </p>
+        </div>
+        
+    </div>
+    
+    <!-- Footer -->
+    <div style="text-align: center; margin-top: 20px; color: #9A9B73; font-size: 12px;">
+        <p>© 2024 Nuestro Diario. Todos los derechos reservados.</p>
+    </div>
+    
+</body>
+</html>
