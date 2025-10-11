@@ -46,7 +46,7 @@ export function InviteCollaboratorModal({ isOpen, onClose, diaryId, diaryTitle, 
       console.log(`Invitation link: ${invitationLink}`);
       
       setEmailStatus('sent');
-      setSuccess(`Invitación enviada a ${email}\n\nEnlace para pruebas: ${invitationLink}`);
+      setSuccess(`Invitación enviada a ${email}`);
       setEmail('');
       onInvitationSent();
     } catch (error) {
