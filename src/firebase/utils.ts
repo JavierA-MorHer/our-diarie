@@ -389,7 +389,14 @@ export class CollaborationService {
         ? await FirestoreService.getAll<SharedDiary>('sharedDiaries', [where('id', 'in', collaboratorDiaryIds)])
         : [];
 
-      return [...ownedDiaries, ...sharedDiaries];
+      // Combine and remove duplicates
+      const allDiaries = [...ownedDiaries, ...sharedDiaries];
+      const uniqueDiaries = allDiaries.filter((diary, index, self) => 
+        index === self.findIndex(d => d.id === diary.id)
+      );
+
+      console.log('Loaded shared diaries:', uniqueDiaries.length, 'for user:', userId);
+      return uniqueDiaries;
     } catch (error) {
       console.error('Error getting shared diaries:', error);
       throw error;

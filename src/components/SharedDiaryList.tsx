@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Share2, Plus, Eye } from 'react-feather';
+import { Users, Share2, Plus, Eye, RefreshCw } from 'react-feather';
 import { CollaborationService, AuthService, type SharedDiary } from '../firebase';
 import { CreateSharedDiaryModal } from './CreateSharedDiaryModal';
 import { InviteCollaboratorModal } from './InviteCollaboratorModal';
@@ -7,17 +7,25 @@ import { InviteCollaboratorModal } from './InviteCollaboratorModal';
 interface SharedDiaryListProps {
   onSelectDiary: (diaryId: string) => void;
   selectedDiaryId?: string;
+  refreshTrigger?: number; // Add refresh trigger prop
 }
 
-export function SharedDiaryList({ onSelectDiary, selectedDiaryId }: SharedDiaryListProps) {
+export function SharedDiaryList({ onSelectDiary, selectedDiaryId, refreshTrigger }: SharedDiaryListProps) {
   const [sharedDiaries, setSharedDiaries] = useState<SharedDiary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [selectedDiaryForInvite, setSelectedDiaryForInvite] = useState<SharedDiary | null>(null);
 
-  const loadSharedDiaries = async () => {
+  const loadSharedDiaries = async (isRefresh = false) => {
     try {
+      if (isRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+      
       const currentUser = AuthService.getCurrentUser();
       if (!currentUser) return;
 
@@ -27,16 +35,21 @@ export function SharedDiaryList({ onSelectDiary, selectedDiaryId }: SharedDiaryL
       console.error('Error loading shared diaries:', error);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
     loadSharedDiaries();
-  }, []);
+  }, [refreshTrigger]); // Reload when refreshTrigger changes
 
   const handleDiaryCreated = (diaryId: string) => {
     loadSharedDiaries();
     onSelectDiary(diaryId);
+  };
+
+  const handleRefresh = () => {
+    loadSharedDiaries(true);
   };
 
   const handleInviteCollaborator = (diary: SharedDiary) => {
@@ -64,13 +77,24 @@ export function SharedDiaryList({ onSelectDiary, selectedDiaryId }: SharedDiaryL
       <div className="p-4 border-b border-[#B9AE9D]/30">
         <div className="flex items-center justify-between mb-4">
           <h2 className="family-lora text-lg text-[#4E443A]">Diarios Compartidos</h2>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-3 py-2 bg-[#D97746] text-white rounded-lg hover:bg-[#D97746]/90 transition-colors family-inter text-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Nuevo
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-2 px-3 py-2 border border-[#B9AE9D] text-[#9A9B73] rounded-lg hover:bg-[#B9AE9D]/10 transition-colors family-inter text-sm disabled:opacity-50"
+              title="Refrescar lista"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refrescando...' : 'Refrescar'}
+            </button>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-[#D97746] text-white rounded-lg hover:bg-[#D97746]/90 transition-colors family-inter text-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Nuevo
+            </button>
+          </div>
         </div>
       </div>
 

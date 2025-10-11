@@ -127,6 +127,7 @@ export default function App() {
   const [currentDiaryType, setCurrentDiaryType] = useState<'personal' | 'shared'>('personal');
   const [currentSharedDiary, setCurrentSharedDiary] = useState<SharedDiary | null>(null);
   const [showSharedDiaries, setShowSharedDiaries] = useState(false);
+  const [sharedDiariesRefreshTrigger, setSharedDiariesRefreshTrigger] = useState(0);
   
   // Delete states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -148,7 +149,9 @@ export default function App() {
       // Get the shared diary
       const sharedDiary = await CollaborationService.getSharedDiary(invitationCode);
       if (sharedDiary) {
-        // Switch to shared diary
+        // Refresh shared diaries list and switch to shared diary view
+        setSharedDiariesRefreshTrigger(prev => prev + 1);
+        setShowSharedDiaries(true);
         await handleSelectSharedDiary(sharedDiary.id!);
       }
     } catch (error) {
@@ -441,6 +444,7 @@ export default function App() {
             <SharedDiaryList
               onSelectDiary={handleSelectSharedDiary}
               selectedDiaryId={currentSharedDiary?.id}
+              refreshTrigger={sharedDiariesRefreshTrigger}
             />
           </div>
         </div>
