@@ -272,31 +272,51 @@ export default function App() {
       }
 
       console.log('✅ User authenticated, processing invitation:', invitationCode);
+      console.log('👤 Current user:', currentUser.email, currentUser.uid);
+
+      // Accept the invitation
+      console.log('📝 Accepting invitation...');
       await CollaborationService.acceptInvitation(invitationCode, currentUser.uid);
+      console.log('✅ Invitation accepted successfully');
 
       // Get the shared diary
+      console.log('📖 Fetching shared diary details...');
       const sharedDiary = await CollaborationService.getSharedDiary(invitationCode);
-      if (sharedDiary) {
-        console.log('📖 Invitation accepted, opening shared diary:', sharedDiary.title);
-        // Refresh shared diaries list and switch to shared diary view
-        setSharedDiariesRefreshTrigger(prev => prev + 1);
-        await handleSelectSharedDiary(sharedDiary.id!);
 
-        // Clear the invitation code from URL and localStorage
+      if (sharedDiary) {
+        console.log('✅ Shared diary found:', sharedDiary.title, sharedDiary.id);
+
+        // Refresh shared diaries list and switch to shared diary view
+        console.log('🔄 Refreshing shared diaries list...');
+        setSharedDiariesRefreshTrigger(prev => prev + 1);
+
+        console.log('📂 Opening shared diary...');
+        await handleSelectSharedDiary(sharedDiary.id!);
+        console.log('✅ Shared diary opened successfully');
+
+        // Clear the invitation code from URL and localStorage ONLY after success
         window.history.replaceState({}, '', window.location.pathname);
         localStorage.removeItem('pendingInvitation');
+        console.log('🧹 Cleaned up invitation code from URL and localStorage');
 
         // Show success message
         alert(`¡Invitación aceptada! Ahora tienes acceso al diario "${sharedDiary.title}".`);
+      } else {
+        console.error('❌ Shared diary not found after accepting invitation');
+        throw new Error('No se pudo encontrar el diario compartido');
       }
     } catch (error) {
-      console.error('Error accepting invitation:', error);
+      console.error('❌ Error accepting invitation:', error);
+
       // Clear the invitation from localStorage to avoid loops
       localStorage.removeItem('pendingInvitation');
       window.history.replaceState({}, '', window.location.pathname);
 
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       alert(`Error al aceptar la invitación: ${errorMessage}\n\nPor favor, solicita una nueva invitación.`);
+
+      // Re-throw to let the caller know there was an error
+      throw error;
     }
   };
 
@@ -319,19 +339,32 @@ export default function App() {
       setIsAuthenticated(isUserAuthenticated);
 
       if (isUserAuthenticated) {
-        // User is authenticated, load entries and then stop loading
-        await loadEntries(user.uid);
-        setIsLoading(false);
-        // Don't show welcome screen if user is already authenticated
-        setShowWelcome(false);
-
-        // Check for pending invitation after user is authenticated
+        // Check for pending invitation FIRST, before loading entries
         const pendingInvitation = localStorage.getItem('pendingInvitation');
+
         if (pendingInvitation) {
           console.log('🔓 User logged in, processing pending invitation:', pendingInvitation);
-          localStorage.removeItem('pendingInvitation');
-          // Process the pending invitation
-          await handleInvitationAcceptance(pendingInvitation);
+          try {
+            // Don't remove from localStorage yet - let handleInvitationAcceptance do it
+            // Process the pending invitation
+            await handleInvitationAcceptance(pendingInvitation);
+            // After processing invitation, we don't need to load entries separately
+            // because handleInvitationAcceptance -> handleSelectSharedDiary -> loadEntries
+            setIsLoading(false);
+            setShowWelcome(false);
+          } catch (invitationError) {
+            console.error('❌ Failed to process pending invitation:', invitationError);
+            // Load normal entries as fallback
+            await loadEntries(user.uid);
+            setIsLoading(false);
+            setShowWelcome(false);
+          }
+        } else {
+          // Normal flow: User is authenticated, load entries and then stop loading
+          await loadEntries(user.uid);
+          setIsLoading(false);
+          // Don't show welcome screen if user is already authenticated
+          setShowWelcome(false);
         }
       } else {
         // User is not authenticated
@@ -372,7 +405,7 @@ export default function App() {
       }
 
       // Transform to Firebase format
-      const firebaseEntry = {
+      const firebaseEntry: any = {
         title: entryData.title,
         content: entryData.content,
         date: new Date(entryData.date),
@@ -380,10 +413,17 @@ export default function App() {
         mood: entryData.song?.title || null,
         tags: [],
         userId: currentUser.uid,
-        diaryId: currentDiaryType === 'shared' ? currentSharedDiary?.id : undefined,
         createdBy: currentUser.uid,
         lastModifiedBy: currentUser.uid
       };
+
+      // Only add diaryId if it's a shared diary (avoid undefined values in Firestore)
+      if (currentDiaryType === 'shared' && currentSharedDiary?.id) {
+        firebaseEntry.diaryId = currentSharedDiary.id;
+      } else {
+        // For personal diary entries, explicitly set diaryId to null to avoid undefined
+        firebaseEntry.diaryId = null;
+      }
 
       // Save to Firebase
       const entryId = await FirestoreService.createDiaryEntry(firebaseEntry);

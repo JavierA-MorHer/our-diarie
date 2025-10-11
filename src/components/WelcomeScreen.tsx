@@ -26,10 +26,16 @@ export function WelcomeScreen({ onStart, isTransitioning }: WelcomeScreenProps) 
 
       // Auto-redirect when user successfully authenticates
       if (user) {
-        // Small delay to show the success message briefly
-        setTimeout(() => {
-          onStart();
-        }, 1500);
+        // If there's a pending invitation, don't auto-redirect
+        // Let App.tsx handle the redirect after processing the invitation
+        if (!pendingInvitation) {
+          // Small delay to show the success message briefly
+          setTimeout(() => {
+            onStart();
+          }, 1500);
+        }
+        // If there's a pending invitation, App.tsx will hide the welcome screen
+        // after processing it successfully
       }
     });
 
