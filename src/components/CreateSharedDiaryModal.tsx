@@ -125,7 +125,7 @@ export function CreateSharedDiaryModal({ isOpen, onClose, onDiaryCreated }: Crea
               </li>
               <li className="flex items-center gap-2">
                 <Plus className="w-4 h-4" />
-                Agregar fotos y música
+                Agregar fotos
               </li>
             </ul>
           </div>
@@ -142,15 +142,15 @@ export function CreateSharedDiaryModal({ isOpen, onClose, onDiaryCreated }: Crea
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 px-4 py-3 border border-[#B9AE9D] text-[#9A9B73] rounded-lg hover:bg-[#B9AE9D]/10 transition-colors family-inter"
+              className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border border-[#B9AE9D] text-[#9A9B73] rounded-lg hover:bg-[#B9AE9D]/10 transition-colors family-inter text-sm sm:text-base"
             >
               Cancelar
             </button>
-            
+
             <button
               type="submit"
               disabled={isCreating || !title.trim()}
-              className="flex-1 px-4 py-3 bg-[#D97746] text-white rounded-lg hover:bg-[#D97746]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors family-inter flex items-center justify-center gap-2"
+              className="flex-1 px-3 sm:px-4 py-2 sm:py-3 bg-[#D97746] text-white rounded-lg hover:bg-[#D97746]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors family-inter flex items-center justify-center gap-2 text-sm sm:text-base"
             >
               {isCreating ? (
                 <>

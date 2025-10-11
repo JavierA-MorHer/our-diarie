@@ -12,13 +12,18 @@ export function WelcomeScreen({ onStart, isTransitioning }: WelcomeScreenProps) 
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasPendingInvitation, setHasPendingInvitation] = useState(false);
 
   useEffect(() => {
+    // Check for pending invitation
+    const pendingInvitation = localStorage.getItem('pendingInvitation');
+    setHasPendingInvitation(!!pendingInvitation);
+
     // Check if user is already authenticated
     const unsubscribe = AuthService.onAuthStateChange((user) => {
       setIsAuthenticated(!!user);
       setIsLoading(false);
-      
+
       // Auto-redirect when user successfully authenticates
       if (user) {
         // Small delay to show the success message briefly
@@ -92,11 +97,24 @@ export function WelcomeScreen({ onStart, isTransitioning }: WelcomeScreenProps) 
 
         {!isAuthenticated ? (
           <div className="space-y-6">
+            {hasPendingInvitation && (
+              <div className="bg-[#D97746]/10 border border-[#D97746]/30 rounded-2xl p-4 mb-4">
+                <p className="text-[#D97746] family-inter font-medium text-sm mb-1">
+                  📨 Tienes una invitación pendiente
+                </p>
+                <p className="text-[#4E443A] family-inter text-xs">
+                  Inicia sesión para aceptar la invitación a un diario compartido
+                </p>
+              </div>
+            )}
+
             <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-6 border border-[#D97746]/20">
               <p className="text-[#4E443A] family-inter mb-4">
-                Para acceder a nuestro diario, necesitas iniciar sesión
+                {hasPendingInvitation
+                  ? 'Inicia sesión para aceptar la invitación'
+                  : 'Para acceder a nuestro diario, necesitas iniciar sesión'}
               </p>
-              
+
               <button
                 onClick={handleGoogleSignIn}
                 disabled={isSigningIn}
@@ -138,14 +156,18 @@ export function WelcomeScreen({ onStart, isTransitioning }: WelcomeScreenProps) 
                 ✅ Sesión iniciada correctamente
               </p>
               <p className="text-green-700 family-inter text-xs mt-2">
-                Redirigiendo automáticamente...
+                {hasPendingInvitation
+                  ? 'Procesando invitación...'
+                  : 'Redirigiendo automáticamente...'}
               </p>
             </div>
-            
+
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D97746] mx-auto mb-4"></div>
               <p className="family-handwritten text-2xl text-[#D97746]">
-                Abriendo nuestro diario...
+                {hasPendingInvitation
+                  ? 'Aceptando invitación...'
+                  : 'Abriendo nuestro diario...'}
               </p>
             </div>
           </div>

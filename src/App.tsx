@@ -154,41 +154,6 @@ export default function App() {
 
   const selectedEntry = entries.find(entry => entry.id === selectedEntryId);
 
-  const handleInvitationAcceptance = async (invitationCode: string) => {
-    try {
-      const currentUser = AuthService.getCurrentUser();
-      if (!currentUser) {
-        // User not authenticated, redirect to welcome screen
-        return;
-      }
-
-      await CollaborationService.acceptInvitation(invitationCode, currentUser.uid);
-      
-      // Get the shared diary
-      const sharedDiary = await CollaborationService.getSharedDiary(invitationCode);
-      if (sharedDiary) {
-        // Refresh shared diaries list and switch to shared diary view
-        setSharedDiariesRefreshTrigger(prev => prev + 1);
-        setShowSharedDiaries(true);
-        await handleSelectSharedDiary(sharedDiary.id!);
-      }
-    } catch (error) {
-      console.error('Error accepting invitation:', error);
-      alert('Error al aceptar la invitación. Por favor, inténtalo de nuevo.');
-    }
-  };
-
-  // Check for invitation code in URL
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const invitationCode = urlParams.get('invite');
-    
-    if (invitationCode) {
-      // Handle invitation acceptance
-      handleInvitationAcceptance(invitationCode);
-    }
-  }, []);
-
   // Load entries from Firebase when user is authenticated
   const loadEntries = async (userId: string, diaryId?: string, diaryType?: 'personal' | 'shared') => {
     const effectiveDiaryType = diaryType || currentDiaryType;
@@ -272,18 +237,102 @@ export default function App() {
     }
   };
 
+  // Shared diary navigation
+  const handleSelectSharedDiary = async (diaryId: string) => {
+    try {
+      const currentUser = AuthService.getCurrentUser();
+      if (!currentUser) return;
+
+      // Get shared diary details
+      const sharedDiary = await FirestoreService.getById<SharedDiary>('sharedDiaries', diaryId);
+      if (!sharedDiary) return;
+
+      setCurrentSharedDiary(sharedDiary);
+      setCurrentDiaryType('shared');
+      setShowSharedDiaries(false);
+      setSelectedEntryId(null);
+      setIsEditing(false);
+
+      // Load entries for this shared diary - pass 'shared' explicitly to avoid state timing issues
+      await loadEntries(currentUser.uid, diaryId, 'shared');
+    } catch (error) {
+      console.error('Error selecting shared diary:', error);
+    }
+  };
+
+  const handleInvitationAcceptance = async (invitationCode: string) => {
+    try {
+      const currentUser = AuthService.getCurrentUser();
+      if (!currentUser) {
+        // User not authenticated, save invitation code and show welcome screen
+        console.log('📧 User not authenticated, saving invitation code:', invitationCode);
+        localStorage.setItem('pendingInvitation', invitationCode);
+        setShowWelcome(true);
+        return;
+      }
+
+      console.log('✅ User authenticated, processing invitation:', invitationCode);
+      await CollaborationService.acceptInvitation(invitationCode, currentUser.uid);
+
+      // Get the shared diary
+      const sharedDiary = await CollaborationService.getSharedDiary(invitationCode);
+      if (sharedDiary) {
+        console.log('📖 Invitation accepted, opening shared diary:', sharedDiary.title);
+        // Refresh shared diaries list and switch to shared diary view
+        setSharedDiariesRefreshTrigger(prev => prev + 1);
+        await handleSelectSharedDiary(sharedDiary.id!);
+
+        // Clear the invitation code from URL and localStorage
+        window.history.replaceState({}, '', window.location.pathname);
+        localStorage.removeItem('pendingInvitation');
+
+        // Show success message
+        alert(`¡Invitación aceptada! Ahora tienes acceso al diario "${sharedDiary.title}".`);
+      }
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
+      // Clear the invitation from localStorage to avoid loops
+      localStorage.removeItem('pendingInvitation');
+      window.history.replaceState({}, '', window.location.pathname);
+
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      alert(`Error al aceptar la invitación: ${errorMessage}\n\nPor favor, solicita una nueva invitación.`);
+    }
+  };
+
+  // Check for invitation code in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const invitationCode = urlParams.get('invite');
+
+    if (invitationCode) {
+      // Handle invitation acceptance
+      handleInvitationAcceptance(invitationCode);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Check authentication status on app load
   useEffect(() => {
     const unsubscribe = AuthService.onAuthStateChange(async (user) => {
       const isUserAuthenticated = !!user;
       setIsAuthenticated(isUserAuthenticated);
-      
+
       if (isUserAuthenticated) {
         // User is authenticated, load entries and then stop loading
         await loadEntries(user.uid);
         setIsLoading(false);
         // Don't show welcome screen if user is already authenticated
         setShowWelcome(false);
+
+        // Check for pending invitation after user is authenticated
+        const pendingInvitation = localStorage.getItem('pendingInvitation');
+        if (pendingInvitation) {
+          console.log('🔓 User logged in, processing pending invitation:', pendingInvitation);
+          localStorage.removeItem('pendingInvitation');
+          // Process the pending invitation
+          await handleInvitationAcceptance(pendingInvitation);
+        }
       } else {
         // User is not authenticated
         setEntries([]);
@@ -293,6 +342,7 @@ export default function App() {
     });
 
     return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSelectEntry = (id: string) => {
@@ -358,29 +408,6 @@ export default function App() {
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditingEntry(null);
-  };
-
-  // Shared diary navigation
-  const handleSelectSharedDiary = async (diaryId: string) => {
-    try {
-      const currentUser = AuthService.getCurrentUser();
-      if (!currentUser) return;
-
-      // Get shared diary details
-      const sharedDiary = await FirestoreService.getById<SharedDiary>('sharedDiaries', diaryId);
-      if (!sharedDiary) return;
-
-      setCurrentSharedDiary(sharedDiary);
-      setCurrentDiaryType('shared');
-      setShowSharedDiaries(false);
-      setSelectedEntryId(null);
-      setIsEditing(false);
-
-      // Load entries for this shared diary - pass 'shared' explicitly to avoid state timing issues
-      await loadEntries(currentUser.uid, diaryId, 'shared');
-    } catch (error) {
-      console.error('Error selecting shared diary:', error);
-    }
   };
 
   const handleBackToPersonalDiary = async () => {

@@ -188,18 +188,13 @@ export class FirestoreService {
   // Diary-specific operations
   static async getDiaryEntries(userId: string, limitCount?: number): Promise<DiaryEntry[]> {
     try {
-      console.log('🔍 getDiaryEntries - Fetching entries for userId:', userId);
       // Get all entries for the user
       const userEntries = await this.getAll<DiaryEntry>('diaryEntries', [
         where('userId', '==', userId)
       ]);
-      console.log('📦 getDiaryEntries - Total entries fetched:', userEntries.length);
-      console.log('📦 getDiaryEntries - Entries with diaryId:', userEntries.filter(e => e.diaryId).length);
-      console.log('📦 getDiaryEntries - Entry details:', userEntries.map(e => ({ id: e.id, title: e.title, diaryId: e.diaryId })));
 
       // Filter out entries that belong to shared diaries (only keep personal diary entries)
       const personalEntries = userEntries.filter(entry => !entry.diaryId);
-      console.log('✅ getDiaryEntries - Personal entries (no diaryId):', personalEntries.length);
 
       // Sort by date in descending order
       const sortedEntries = personalEntries.sort((a, b) => {
