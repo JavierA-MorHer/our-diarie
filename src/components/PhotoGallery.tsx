@@ -1,5 +1,7 @@
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { useState } from 'react';
+import { LazyImage } from './LazyImage';
 import { WashiTape } from './WashiTape';
+import { ImageModal } from './ImageModal';
 
 interface Photo {
   id: string;
@@ -12,6 +14,9 @@ interface PhotoGalleryProps {
 }
 
 export function PhotoGallery({ photos }: PhotoGalleryProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
   // Predefined rotations and positions for natural scatter effect
   const photoStyles = [
     { rotation: -3, zIndex: 1, top: '0%', left: '5%' },
@@ -32,40 +37,62 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
     { variant: 'solid' as const, color: '#D97746', position: 'top-right' as const },
   ];
 
-  return (
-    <div className="relative h-96 my-8 overflow-hidden">
-      {photos.slice(0, 6).map((photo, index) => {
-        const style = photoStyles[index] || photoStyles[0];
-        const washi = washiVariants[index] || washiVariants[0];
+  const handleImageClick = (index: number) => {
+    setSelectedImageIndex(index);
+    setIsModalOpen(true);
+  };
 
-        return (
-          <div
-            key={photo.id}
-            className="absolute w-32 h-32 md:w-36 md:h-36 transition-transform duration-300 hover:scale-105 hover:z-50"
-            style={{
-              transform: `rotate(${style.rotation}deg)`,
-              zIndex: style.zIndex,
-              top: style.top,
-              left: style.left,
-            }}
-          >
-            <div className="w-full h-full bg-white p-2 shadow-lg border border-[#B9AE9D]/30 relative">
-              <ImageWithFallback
-                src={photo.url}
-                alt={photo.alt}
-                className="w-full h-full object-cover"
-              />
-              {/* Cinta washi "pegando" la foto */}
-              <WashiTape
-                variant={washi.variant}
-                color={washi.color}
-                rotation={style.rotation > 0 ? -12 : 15}
-                position={washi.position}
-              />
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
+  return (
+    <>
+      <div className="relative h-96 my-8 overflow-hidden">
+        {photos.slice(0, 6).map((photo, index) => {
+          const style = photoStyles[index] || photoStyles[0];
+          const washi = washiVariants[index] || washiVariants[0];
+
+          return (
+            <div
+              key={photo.id}
+              className="absolute w-32 h-32 md:w-36 md:h-36 transition-transform duration-300 hover:scale-105 hover:z-50 cursor-pointer"
+              style={{
+                transform: `rotate(${style.rotation}deg)`,
+                zIndex: style.zIndex,
+                top: style.top,
+                left: style.left,
+              }}
+              onClick={() => handleImageClick(index)}
+            >
+              <div className="w-full h-full bg-white p-2 shadow-lg border border-[#B9AE9D]/30 relative">
+                <LazyImage
+                  src={photo.url}
+                  alt={photo.alt}
+                  className="w-full h-full object-cover"
+                />
+                {/* Cinta washi "pegando" la foto */}
+                <WashiTape
+                  variant={washi.variant}
+                  color={washi.color}
+                  rotation={style.rotation > 0 ? -12 : 15}
+                  position={washi.position}
+                />
+                {/* Overlay para indicar que es clickeable */}
+                <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-200 rounded-sm" />
+              </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+
+      {/* Modal para ver imágenes en grande */}
+      <ImageModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        photos={photos}
+        initialIndex={selectedImageIndex}
+      />
+    </>
   );
 }

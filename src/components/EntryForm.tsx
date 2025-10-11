@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Save, X, Calendar, Type, Camera, Upload, Trash2 } from 'react-feather';
 import type { DiaryEntryData } from './DiaryEntry';
 import { StorageService, AuthService } from '../firebase';
+import { LazyImage } from './LazyImage';
 
 interface EntryFormProps {
   onSave: (entry: Omit<DiaryEntryData, 'id'>) => void;
@@ -212,7 +213,7 @@ export function EntryForm({ onSave, onCancel, initialData }: EntryFormProps) {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                 {photoPreviews.map((preview, index) => (
                   <div key={index} className="relative group">
-                    <img
+                    <LazyImage
                       src={preview}
                       alt={`Preview ${index + 1}`}
                       className="w-full h-32 object-cover rounded-lg border border-[#B9AE9D]/30"
