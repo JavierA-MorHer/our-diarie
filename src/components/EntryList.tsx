@@ -47,20 +47,20 @@ export function EntryList({
           <div className="flex items-center gap-2">
             <button
               onClick={onToggleSidebar}
-              className="text-[#D97746] hover:text-[#D97746]/80 transition-all duration-200"
+              className="text-[#D97746] hover:text-[#D97746]/80 transition-all duration-200 p-2 -m-2 md:p-0 md:m-0"
               aria-label={isExpanded ? 'Colapsar sidebar' : 'Expandir sidebar'}
             >
-              <Heart className="w-5 h-5" />
+              <Heart className="w-6 h-6 md:w-5 md:h-5" />
             </button>
             {isExpanded && (
               <div className="flex items-center gap-2 animate-fadeIn">
                 {currentDiaryType === 'shared' && (
                   <button
                     onClick={selectedEntry && onBackFromEntry ? onBackFromEntry : onBackToPersonalDiary}
-                    className="text-[#9A9B73] hover:text-[#D97746] transition-colors"
+                    className="text-[#9A9B73] hover:text-[#D97746] transition-colors p-2 -m-2 md:p-0 md:m-0"
                     title={selectedEntry ? "Cerrar entrada" : "Volver a mi diario personal"}
                   >
-                    <ArrowLeft className="w-4 h-4" />
+                    <ArrowLeft className="w-5 h-5 md:w-4 md:h-4" />
                   </button>
                 )}
                 <h2 className="family-lora text-sm md:text-base text-[#4E443A]">
@@ -79,22 +79,22 @@ export function EntryList({
           </div>
 
           {isExpanded && (
-            <div className="flex items-center gap-3 animate-fadeIn">
+            <div className="flex items-center gap-1 md:gap-3 animate-fadeIn">
               {currentDiaryType === 'personal' && onShowSharedDiaries && (
                 <button
                   onClick={onShowSharedDiaries}
-                  className="text-[#9A9B73] hover:text-[#D97746] transition-colors"
+                  className="text-[#9A9B73] hover:text-[#D97746] transition-colors p-2 md:p-0"
                   title="Ver diarios compartidos"
                 >
-                  <Share2 className="w-4 h-4" />
+                  <Share2 className="w-5 h-5 md:w-4 md:h-4" />
                 </button>
               )}
               <button
                 onClick={onSignOut}
-                className="text-[#9A9B73] hover:text-[#D97746] transition-colors"
+                className="text-[#9A9B73] hover:text-[#D97746] transition-colors p-2 md:p-0"
                 title="Cerrar sesión"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-5 h-5 md:w-4 md:h-4" />
               </button>
             </div>
           )}
@@ -104,18 +104,18 @@ export function EntryList({
           {isExpanded ? (
             <button
               onClick={onNewEntry}
-              className="w-full bg-[#D97746] hover:bg-[#D97746]/90 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 ease-in-out family-inter text-sm md:text-base animate-fadeIn"
+              className="w-full bg-[#D97746] hover:bg-[#D97746]/90 text-white py-2.5 px-4 md:py-2 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 ease-in-out family-inter text-sm md:text-base animate-fadeIn"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-5 h-5 md:w-4 md:h-4" />
               Nueva entrada
             </button>
           ) : (
             <button
               onClick={onNewEntry}
-              className="w-full bg-[#D97746] hover:bg-[#D97746]/90 text-white py-2 px-2 rounded-lg flex items-center justify-center transition-all duration-300 ease-in-out mt-2"
+              className="w-full bg-[#D97746] hover:bg-[#D97746]/90 text-white py-3 px-2 md:py-2 rounded-lg flex items-center justify-center transition-all duration-300 ease-in-out mt-2"
               title="Nueva entrada"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-6 h-6 md:w-5 md:h-5" />
             </button>
           )}
         </div>
@@ -147,7 +147,7 @@ export function EntryList({
                     transform: isExpanded ? `rotate(${rotation}deg)` : 'none',
                   }}
                   className={`w-full mb-3 md:mb-4 rounded-sm text-left transition-all duration-300 ${
-                    isExpanded ? 'p-3 md:p-4' : 'p-2'
+                    isExpanded ? 'p-3 md:p-4' : 'p-3 md:p-2'
                   } ${
                     isSelected
                       ? 'bg-white border-2 border-[#D97746] shadow-[0_4px_12px_rgba(217,119,70,0.15)] scale-105 z-10'
@@ -174,8 +174,8 @@ export function EntryList({
                       </div>
                     </>
                   ) : (
-                    <div className="w-full h-8 flex items-center justify-center">
-                      <Calendar className="w-5 h-5 text-[#9A9B73]" />
+                    <div className="w-full h-10 md:h-8 flex items-center justify-center">
+                      <Calendar className="w-7 h-7 md:w-5 md:h-5 text-[#9A9B73]" />
                     </div>
                   )}
                 </button>

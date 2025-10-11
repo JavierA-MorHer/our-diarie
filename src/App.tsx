@@ -192,7 +192,6 @@ export default function App() {
   // Load entries from Firebase when user is authenticated
   const loadEntries = async (userId: string, diaryId?: string, diaryType?: 'personal' | 'shared') => {
     const effectiveDiaryType = diaryType || currentDiaryType;
-    console.log('🔄 loadEntries called with:', { userId, diaryId, diaryType, currentDiaryType, effectiveDiaryType });
     setIsLoadingEntries(true);
     try {
       let firebaseEntries: FirebaseDiaryEntry[];
@@ -206,13 +205,10 @@ export default function App() {
         console.log('✅ Loaded shared diary entries:', firebaseEntries.length);
       } else {
         // Load personal diary entries
-        console.log('📁 Loading personal diary entries for userId:', userId);
         firebaseEntries = await FirestoreService.getDiaryEntries(userId);
-        console.log('✅ Loaded personal diary entries:', firebaseEntries.length);
       }
 
       // Build caches for shared diary info and collaborator names
-      console.log('🗂️  Building caches for additional info...');
       const sharedDiaryCache = new Map<string, string>();
       const collaboratorsCache = new Map<string, string>();
 
@@ -223,7 +219,6 @@ export default function App() {
           currentUser.uid,
           currentUser.displayName || currentUser.email?.split('@')[0] || 'Usuario'
         );
-        console.log('👤 Added current user to cache:', currentUser.uid);
       }
 
       // Get unique diary IDs and creator IDs
@@ -231,7 +226,6 @@ export default function App() {
       firebaseEntries.forEach(entry => {
         if (entry.diaryId) diaryIds.add(entry.diaryId);
       });
-      console.log('📚 Found unique diary IDs:', diaryIds.size);
 
       // Load diary titles
       if (diaryIds.size > 0) {
@@ -239,7 +233,6 @@ export default function App() {
           await Promise.all(
             Array.from(diaryIds).map(async (id) => {
               try {
-                console.log('🔍 Loading info for diary:', id);
                 const diary = await FirestoreService.getById<SharedDiary>('sharedDiaries', id);
                 if (diary?.title) {
                   sharedDiaryCache.set(id, diary.title);
@@ -248,11 +241,9 @@ export default function App() {
 
                 // Load collaborators for this diary
                 const collaborators = await CollaborationService.getCollaborators(id);
-                console.log('👥 Found collaborators:', collaborators.length);
                 collaborators.forEach(collab => {
                   if (collab.userName) {
                     collaboratorsCache.set(collab.userId, collab.userName);
-                    console.log('👤 Cached collaborator:', collab.userName);
                   }
                 });
               } catch (err) {
@@ -266,12 +257,9 @@ export default function App() {
       }
 
       // Transform entries with caches
-      console.log('🔄 Transforming entries...');
       const transformedEntries = await Promise.all(
         firebaseEntries.map(entry => transformFirebaseEntry(entry, sharedDiaryCache, collaboratorsCache))
       );
-      console.log('✅ Transformed entries:', transformedEntries.length);
-      console.log('📝 Entries data:', transformedEntries.map(e => ({ id: e.id, title: e.title, diaryId: e.diaryId, diaryTitle: e.diaryTitle })));
       setEntries(transformedEntries);
     } catch (error) {
       console.error('❌ Error loading entries:', error);
